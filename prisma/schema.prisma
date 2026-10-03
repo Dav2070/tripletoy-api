@@ -1,0 +1,20 @@
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "esm"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Toy {
+  id          BigInt   @id @default(autoincrement())
+  uuid        String   @unique @default(uuid()) @db.VarChar
+  userId      BigInt
+  title       String   @db.VarChar
+  description String?  @db.VarChar
+  price       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+}

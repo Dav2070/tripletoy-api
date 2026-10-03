@@ -1,0 +1,12 @@
+{
+	"compilerOptions": {
+		"strict": false,
+		"types": ["node"],
+		"module": "Node16",
+		"target": "ES2022",
+		"outDir": "./dist",
+		"moduleResolution": "Node16",
+		"allowSyntheticDefaultImports": true
+	},
+	"include": ["server.ts", "src/**/*.ts"]
+}

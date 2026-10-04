@@ -44,12 +44,12 @@ query {
 
 ## Profil
 
-Alter, Beschreibung, Telefonnummer und Adresse sind optional (Alter 1–120, Beschreibung höchstens 1000 Zeichen, jedes Adressfeld höchstens 100 Zeichen). Die Adresse ist nur über `retrieveMyProfile` für den Nutzer selbst abrufbar. Beim Speichern ersetzen die übergebenen Werte die bisherigen, ohne Wert wird das Feld geleert.
+Geburtsdatum, Beschreibung, Telefonnummer und Adresse sind optional (Geburtsdatum `YYYY-MM-DD`, nicht in der Zukunft und höchstens 120 Jahre her, das Alter wird daraus berechnet; Beschreibung höchstens 1000 Zeichen, jedes Adressfeld höchstens 100 Zeichen). Die Adresse ist nur über `retrieveMyProfile` für den Nutzer selbst abrufbar. Beim Speichern ersetzen die übergebenen Werte die bisherigen, ohne Wert wird das Feld geleert.
 
 ```graphql
 mutation {
 	updateMyProfile(
-		age: 8
+		birthDate: "2016-05-24"
 		description: "Sammelt Lego"
 		phone: "+49 170 1234567"
 		address: {
@@ -68,6 +68,7 @@ mutation {
 query {
 	retrieveMyProfile {
 		age
+		birthDate
 		description
 		phone
 		address {
@@ -92,6 +93,20 @@ query {
 			uuid
 			title
 		}
+	}
+}
+```
+
+## Übersicht
+
+`retrieveMyToyStats` (mit Login) zählt die aktiven und verkauften Spielzeuge des Nutzers sowie seine Käufe.
+
+```graphql
+query {
+	retrieveMyToyStats {
+		active
+		sold
+		bought
 	}
 }
 ```

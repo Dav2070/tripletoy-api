@@ -2,12 +2,12 @@ import { UserProfile } from "../generated/prisma/client.js"
 import { throwValidationError } from "../utils.js"
 import { validationErrors } from "../errors.js"
 import {
-	profileAgeMin,
 	profileAgeMax,
 	profileDescriptionMaxLength,
 	profileAddressFieldMaxLength,
 	profilePhoneRegex
 } from "../constants.js"
+import { parseDate, calculateAge } from "../services/ageService.js"
 import { ResolverContext, QueryResult } from "../types.js"
 
 interface AddressInput {
@@ -19,7 +19,7 @@ interface AddressInput {
 	country?: string
 }
 
-const emptyProfile = { age: null, description: null }
+const emptyProfile = { birthDate: null, description: null }
 
 /** Returns the profile of the logged in user, empty if nothing was saved yet */
 export async function retrieveMyProfile(
@@ -37,14 +37,15 @@ export async function retrieveMyProfile(
 export async function updateMyProfile(
 	parent: any,
 	args: {
-		age?: number
+		birthDate?: string
 		description?: string
 		address?: AddressInput
 		phone?: string
 	},
 	context: ResolverContext
 ): Promise<UserProfile> {
-	const age = args.age ?? null
+	const birthDateText = args.birthDate?.trim() || null
+	const birthDate = birthDateText != null ? parseDate(birthDateText) : null
 	const description = args.description?.trim() || null
 	const phone = args.phone?.trim() || null
 
@@ -57,9 +58,11 @@ export async function updateMyProfile(
 	)
 
 	throwValidationError(
-		age != null &&
-			(!Number.isInteger(age) || age < profileAgeMin || age > profileAgeMax)
-			? validationErrors.ageInvalid
+		birthDateText != null &&
+			(birthDate == null ||
+				birthDate.getTime() > Date.now() ||
+				calculateAge(birthDate) > profileAgeMax)
+			? validationErrors.birthDateInvalid
 			: null,
 		description != null && description.length > profileDescriptionMaxLength
 			? validationErrors.profileDescriptionTooLong
@@ -77,7 +80,7 @@ export async function updateMyProfile(
 	const userId = BigInt(context.user.Id)
 
 	const data = {
-		age,
+		birthDate,
 		description,
 		phone,
 		addressName: address.name,

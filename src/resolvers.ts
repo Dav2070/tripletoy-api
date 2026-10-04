@@ -3,6 +3,7 @@ import { cachingResolver } from "./services/cachingService.js"
 import * as toyResolvers from "./resolvers/toy.js"
 import * as checkoutSessionResolvers from "./resolvers/checkoutSession.js"
 import * as profileResolvers from "./resolvers/profile.js"
+import { calculateAge } from "./services/ageService.js"
 
 export const resolvers = {
 	Query: {
@@ -22,6 +23,19 @@ export const resolvers = {
 			info: any
 		) =>
 			cachingResolver(parent, args, context, info, toyResolvers.listMyToys),
+		retrieveMyToyStats: (
+			parent: any,
+			args: any,
+			context: ResolverContext,
+			info: any
+		) =>
+			cachingResolver(
+				parent,
+				args,
+				context,
+				info,
+				toyResolvers.retrieveMyToyStats
+			),
 		listMyPurchases: (
 			parent: any,
 			args: any,
@@ -53,6 +67,12 @@ export const resolvers = {
 		url: (photo: { fileName: string }) => `/photos/${photo.fileName}`
 	},
 	Profile: {
+		age: (profile: { birthDate?: Date | null }) =>
+			profile.birthDate ? calculateAge(profile.birthDate) : null,
+		birthDate: (profile: { birthDate?: Date | null }) =>
+			profile.birthDate
+				? profile.birthDate.toISOString().slice(0, 10)
+				: null,
 		address: (profile: {
 			addressName?: string | null
 			addressLine1?: string | null

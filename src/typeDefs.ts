@@ -9,6 +9,7 @@ export const typeDefs = `#graphql
 		): ToyList!
 		listMyToys(limit: Int, offset: Int): ToyList! @auth
 		listMyPurchases(limit: Int, offset: Int): ToyList! @auth
+		retrieveMyToyStats: ToyStats! @auth
 		retrieveMyProfile: Profile! @auth
 	}
 
@@ -16,7 +17,7 @@ export const typeDefs = `#graphql
 		createToy(title: String!, description: String, price: Int!): Toy!
 			@auth
 		updateMyProfile(
-			age: Int
+			birthDate: String
 			description: String
 			address: AddressInput
 			phone: String
@@ -54,11 +55,14 @@ export const typeDefs = `#graphql
 	}
 
 	type Profile {
+		"The age in years, calculated from the birth date"
+		age: Int
+		"The birth date as YYYY-MM-DD"
+		birthDate: String
 		"The address of the user, only visible for the user themselves"
 		address: Address
 		"The phone number of the user, only visible for the user themselves"
 		phone: String
-		age: Int
 		description: String
 	}
 
@@ -99,6 +103,15 @@ export const typeDefs = `#graphql
 	type ToyPhoto {
 		uuid: String!
 		url: String!
+	}
+
+	type ToyStats {
+		"Toys of the user that are still for sale"
+		active: Int!
+		"Toys of the user that have been sold"
+		sold: Int!
+		"Toys the user has bought"
+		bought: Int!
 	}
 
 	type ToyList {

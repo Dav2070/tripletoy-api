@@ -104,6 +104,23 @@ export async function listMyPurchases(
 	}
 }
 
+/** Counts the active, sold and bought toys of the logged in user */
+export async function retrieveMyToyStats(
+	parent: any,
+	args: {},
+	context: ResolverContext
+): Promise<QueryResult<{ active: number; sold: number; bought: number }>> {
+	const userId = BigInt(context.user.Id)
+
+	const [active, sold, bought] = await context.prisma.$transaction([
+		context.prisma.toy.count({ where: { userId, soldAt: null } }),
+		context.prisma.toy.count({ where: { userId, soldAt: { not: null } } }),
+		context.prisma.toyOrder.count({ where: { buyerId: userId } })
+	])
+
+	return { caching: false, data: { active, sold, bought } }
+}
+
 /** Lists the toys of the logged in user, including the sold ones */
 export async function listMyToys(
 	parent: any,

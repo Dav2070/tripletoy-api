@@ -1,7 +1,6 @@
 export const admins = [1]
 export const toyTitleMaxLength = 100
 export const toyDescriptionMaxLength = 5000
-export const profileAgeMin = 1
 export const profileAgeMax = 120
 export const profileDescriptionMaxLength = 1000
 export const profileAddressFieldMaxLength = 100

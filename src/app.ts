@@ -4,9 +4,9 @@ import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHt
 import express from "express"
 import http from "node:http"
 import cors from "cors"
-import { User, UsersController, convertUserResourceToUser } from "dav-js"
-import { throwApiError } from "./utils.js"
-import { apiErrors } from "./errors.js"
+import { retrieveUserByAccessToken } from "./services/userService.js"
+import { createPhotosRouter } from "./routes/photos.js"
+import { setupDavWebhook } from "./endpoints/davWebhook.js"
 import { invalidateCache } from "./services/cachingService.js"
 import { createSchema } from "./schema.js"
 import type { AppDependencies } from "./appDependencies.js"
@@ -40,6 +40,9 @@ export async function createApp(dependencies: AppDependencies) {
 	})
 	await server.start()
 
+	app.use(cors<cors.CorsRequest>(), createPhotosRouter(dependencies))
+	setupDavWebhook(app, dependencies)
+
 	app.use(
 		"/",
 		cors<cors.CorsRequest>(),
@@ -47,25 +50,7 @@ export async function createApp(dependencies: AppDependencies) {
 		expressMiddleware(server, {
 			context: async ({ req }) => {
 				const accessToken = req.headers.authorization
-				let user: User = null
-
-				if (accessToken != null) {
-					let userResponse = await UsersController.retrieveUser(
-						`
-						id
-						email
-						firstName
-						plan
-					`,
-						{ accessToken }
-					)
-
-					if (!Array.isArray(userResponse)) {
-						user = convertUserResourceToUser(userResponse)
-					} else {
-						throwApiError(apiErrors.sessionExpired)
-					}
-				}
+				const user = await retrieveUserByAccessToken(accessToken)
 
 				return {
 					prisma: dependencies.prisma,

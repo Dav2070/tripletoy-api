@@ -17,4 +17,47 @@ model Toy {
   price       Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
+  soldAt      DateTime?
+  photos      ToyPhoto[]
+  order       ToyOrder?
+}
+
+// The paid dav order of a toy, including the shipping address for the seller
+model ToyOrder {
+  id        BigInt   @id @default(autoincrement())
+  orderUuid String   @unique @db.VarChar
+  toyId     BigInt   @unique
+  toy       Toy      @relation(fields: [toyId], references: [id], onDelete: Cascade)
+  buyerId   BigInt
+  price     Int
+  name      String   @db.VarChar
+  email     String   @db.VarChar
+  phone     String?  @db.VarChar
+  line1     String   @db.VarChar
+  line2     String?  @db.VarChar
+  postalCode String  @db.VarChar
+  city      String   @db.VarChar
+  state     String?  @db.VarChar
+  country   String   @db.VarChar
+  createdAt DateTime @default(now())
+}
+
+model ToyPhoto {
+  id        BigInt   @id @default(autoincrement())
+  uuid      String   @unique @default(uuid()) @db.VarChar
+  toyId     BigInt
+  toy       Toy      @relation(fields: [toyId], references: [id], onDelete: Cascade)
+  fileName  String   @db.VarChar
+  createdAt DateTime @default(now())
+
+  @@index([toyId])
+}
+
+model UserProfile {
+  id          BigInt   @id @default(autoincrement())
+  userId      BigInt   @unique
+  age         Int?
+  description String?  @db.VarChar
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
 }

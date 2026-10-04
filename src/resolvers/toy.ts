@@ -71,31 +71,108 @@ async function findToys(
 
 export async function listToys(
 	parent: any,
-	args: { limit?: number; offset?: number },
+	args: {
+		limit?: number
+		offset?: number
+		latitude?: number
+		longitude?: number
+	},
 	context: ResolverContext
 ): Promise<QueryResult<List<Toy>>> {
+	// Sold toys are only listed for a week, afterwards they are only shown
+	// to the seller and the buyer. Unsold toys come first, then the sold ones.
+	const soldSince = new Date(
+		Date.now() - soldToyVisibleDays * 24 * 60 * 60 * 1000
+	)
+	const where: Prisma.ToyWhereInput = {
+		OR: [{ soldAt: null }, { soldAt: { gte: soldSince } }]
+	}
+
+	if (args.latitude != null || args.longitude != null) {
+		throwValidationError(
+			args.latitude == null ||
+				args.longitude == null ||
+				!(args.latitude >= -90 && args.latitude <= 90) ||
+				!(args.longitude >= -180 && args.longitude <= 180)
+				? validationErrors.locationInvalid
+				: null
+		)
+
+		// The result depends on the location of the user, so it is not cached
+		return {
+			caching: false,
+			data: await findToysByDistance(
+				args,
+				context,
+				where,
+				soldSince,
+				args.latitude,
+				args.longitude
+			)
+		}
+	}
+
 	return {
 		caching: true,
-		// Sold toys are only listed for a week, afterwards they are only shown
-		// to the seller and the buyer. Unsold toys come first, then the sold ones.
-		data: await findToys(
-			args,
-			context,
-			{
-				OR: [
-					{ soldAt: null },
-					{
-						soldAt: {
-							gte: new Date(
-								Date.now() - soldToyVisibleDays * 24 * 60 * 60 * 1000
-							)
-						}
-					}
-				]
-			},
-			[{ soldAt: { sort: "desc", nulls: "first" } }, { id: "desc" }]
-		)
+		data: await findToys(args, context, where, [
+			{ soldAt: { sort: "desc", nulls: "first" } },
+			{ id: "desc" }
+		])
 	}
+}
+
+/**
+ * Lists the toys sorted by the distance of the seller to the given position. The
+ * distance is the great-circle distance in kilometers to the approximate position of
+ * the seller. Toys of sellers without a position come last, sold toys always at the end.
+ */
+async function findToysByDistance(
+	args: { limit?: number; offset?: number },
+	context: ResolverContext,
+	where: Prisma.ToyWhereInput,
+	soldSince: Date,
+	latitude: number,
+	longitude: number
+): Promise<List<Toy>> {
+	let take = args.limit || 10
+	if (take <= 0) take = 10
+
+	let skip = args.offset || 0
+	if (skip < 0) skip = 0
+
+	const [total, rows] = await Promise.all([
+		context.prisma.toy.count({ where }),
+		context.prisma.$queryRaw<{ id: bigint; distance: number | null }[]>`
+			SELECT t."id",
+				6371 * 2 * ASIN(SQRT(
+					POWER(SIN(RADIANS(p."latitude" - ${latitude}::float8) / 2), 2) +
+					COS(RADIANS(${latitude}::float8)) * COS(RADIANS(p."latitude")) *
+					POWER(SIN(RADIANS(p."longitude" - ${longitude}::float8) / 2), 2)
+				)) AS "distance"
+			FROM "Toy" t
+			LEFT JOIN "UserProfile" p ON p."userId" = t."userId"
+			WHERE t."soldAt" IS NULL OR t."soldAt" >= ${soldSince}::timestamp
+			ORDER BY (t."soldAt" IS NOT NULL) ASC, "distance" ASC NULLS LAST, t."id" DESC
+			LIMIT ${take} OFFSET ${skip}
+		`
+	])
+
+	const toys = await context.prisma.toy.findMany({
+		where: { id: { in: rows.map(r => r.id) } },
+		include: toyInclude
+	})
+	const toysById = new Map(toys.map(t => [t.id, t]))
+
+	const items = rows
+		.filter(row => toysById.has(row.id))
+		.map(row => ({
+			...toysById.get(row.id),
+			// One decimal is enough, the position is only approximate anyway
+			distance:
+				row.distance == null ? null : Math.round(row.distance * 10) / 10
+		}))
+
+	return { total, items }
 }
 
 /** Lists the toys the logged in user has bought, the latest purchase first */

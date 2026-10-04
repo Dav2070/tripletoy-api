@@ -6,6 +6,9 @@ export const typeDefs = `#graphql
 		listToys(
 			limit: Int
 			offset: Int
+			"Sorts the toys by the distance to this position, sold toys come last"
+			latitude: Float
+			longitude: Float
 		): ToyList!
 		listToyLocations: [ToyLocation!]!
 		listMyToys(limit: Int, offset: Int): ToyList! @auth
@@ -79,6 +82,8 @@ export const typeDefs = `#graphql
 		price: Int!
 		photos: [ToyPhoto!]!
 		sold: Boolean!
+		"Distance in kilometers to the approximate position of the seller, only set when the list is sorted by distance"
+		distance: Float
 		"Whether the logged in user is the seller"
 		mine: Boolean!
 		"Whether the logged in user has bought the toy"

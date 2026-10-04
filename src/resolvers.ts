@@ -107,6 +107,7 @@ export const resolvers = {
 	},
 	Toy: {
 		sold: (toy: { soldAt: Date | null }) => toy.soldAt != null,
+		distance: (toy: { distance?: number | null }) => toy.distance ?? null,
 		mine: (toy: { userId: bigint }, args: any, context: ResolverContext) =>
 			context.user != null && BigInt(context.user.Id) == toy.userId,
 		bought: async (

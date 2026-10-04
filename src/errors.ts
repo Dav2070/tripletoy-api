@@ -73,6 +73,7 @@ export const validationErrors = {
 	birthDateInvalid: "BIRTH_DATE_INVALID",
 	addressInvalid: "ADDRESS_INVALID",
 	addressRequired: "ADDRESS_REQUIRED",
+	locationInvalid: "LOCATION_INVALID",
 	phoneInvalid: "PHONE_INVALID",
 	profileDescriptionTooLong: "PROFILE_DESCRIPTION_TOO_LONG"
 }

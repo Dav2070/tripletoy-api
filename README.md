@@ -130,6 +130,21 @@ query {
 }
 ```
 
+## Nach Entfernung sortieren
+
+`listToys` kann mit `latitude` und `longitude` aufgerufen werden. Dann sind die Spielzeuge nach der Luftlinie zur ungefähren Position des Verkäufers sortiert (Spielzeuge ohne Position und verkaufte kommen zuletzt), und `Toy.distance` enthält die Entfernung in Kilometern. Der Standort wird nur für die Abfrage verwendet und nicht gespeichert, und das Ergebnis wird nicht gecacht.
+
+```graphql
+query {
+	listToys(limit: 24, latitude: 52.52, longitude: 13.4) {
+		items {
+			title
+			distance
+		}
+	}
+}
+```
+
 ## Spielzeug einstellen
 
 Erfordert den `Authorization`-Header mit dem dav-Access-Token. Der Preis wird in Cent angegeben (50 bis 100.000, also 0,50 € bis 1.000 €). Beim Erstellen wird zusätzlich ein dav-TableObject mit derselben UUID angelegt. Zum Verkaufen braucht der Nutzer eine vollständige Adresse im Profil (Name, Straße, PLZ, Ort und Land). Hat er noch keine, muss `address` mitgeschickt werden und wird im Profil gespeichert, sonst kommt `ADDRESS_REQUIRED`.

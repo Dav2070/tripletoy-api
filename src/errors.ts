@@ -72,6 +72,7 @@ export const validationErrors = {
 	priceInvalid: "PRICE_INVALID",
 	birthDateInvalid: "BIRTH_DATE_INVALID",
 	addressInvalid: "ADDRESS_INVALID",
+	addressRequired: "ADDRESS_REQUIRED",
 	phoneInvalid: "PHONE_INVALID",
 	profileDescriptionTooLong: "PROFILE_DESCRIPTION_TOO_LONG"
 }

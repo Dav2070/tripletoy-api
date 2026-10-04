@@ -99,7 +99,9 @@ query {
 
 ## Übersicht
 
-`retrieveMyToyStats` (mit Login) zählt die aktiven und verkauften Spielzeuge des Nutzers sowie seine Käufe.
+`retrieveMyToyStats` (mit Login) zählt die aktiven und verkauften Spielzeuge des Nutzers sowie seine Käufe und die gesammelten Coins.
+
+Coins gibt es für jede bezahlte Bestellung: 15 für den Käufer und 10 für den Verkäufer (`coinsPerPurchase` und `coinsPerSale` in `src/constants.ts`). Der Stand wird aus den gespeicherten Bestellungen berechnet, es gibt keine eigene Tabelle. Ändert man die Werte, ändern sich die Stände rückwirkend.
 
 ```graphql
 query {
@@ -107,13 +109,14 @@ query {
 		active
 		sold
 		bought
+		coins
 	}
 }
 ```
 
 ## Spielzeug einstellen
 
-Erfordert den `Authorization`-Header mit dem dav-Access-Token. Der Preis wird in Cent angegeben (50 bis 100.000, also 0,50 € bis 1.000 €). Beim Erstellen wird zusätzlich ein dav-TableObject mit derselben UUID angelegt.
+Erfordert den `Authorization`-Header mit dem dav-Access-Token. Der Preis wird in Cent angegeben (50 bis 100.000, also 0,50 € bis 1.000 €). Beim Erstellen wird zusätzlich ein dav-TableObject mit derselben UUID angelegt. Zum Verkaufen braucht der Nutzer eine vollständige Adresse im Profil (Name, Straße, PLZ, Ort und Land). Hat er noch keine, muss `address` mitgeschickt werden und wird im Profil gespeichert, sonst kommt `ADDRESS_REQUIRED`.
 
 ```graphql
 mutation {

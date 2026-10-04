@@ -2,6 +2,14 @@ import { randomUUID } from "node:crypto"
 import { TableObjectsController } from "dav-js"
 import { Toy, Prisma } from "../generated/prisma/client.js"
 import { deletePhotoFiles } from "../services/photoStorage.js"
+import {
+	AddressInput,
+	addressFromProfile,
+	addressToColumns,
+	cleanAddress,
+	isAddressComplete,
+	isAddressTooLong
+} from "../services/addressService.js"
 import { throwApiError, throwValidationError } from "../utils.js"
 import { apiErrors, validationErrors } from "../errors.js"
 import {
@@ -10,7 +18,9 @@ import {
 	toyPriceMin,
 	toyPriceMax,
 	toyTableId,
-	soldToyVisibleDays
+	soldToyVisibleDays,
+	coinsPerPurchase,
+	coinsPerSale
 } from "../constants.js"
 import { ResolverContext, QueryResult, List } from "../types.js"
 
@@ -104,21 +114,28 @@ export async function listMyPurchases(
 	}
 }
 
-/** Counts the active, sold and bought toys of the logged in user */
+/** Counts the active, sold and bought toys and the collected coins of the logged in user */
 export async function retrieveMyToyStats(
 	parent: any,
 	args: {},
 	context: ResolverContext
-): Promise<QueryResult<{ active: number; sold: number; bought: number }>> {
+): Promise<
+	QueryResult<{ active: number; sold: number; bought: number; coins: number }>
+> {
 	const userId = BigInt(context.user.Id)
 
-	const [active, sold, bought] = await context.prisma.$transaction([
-		context.prisma.toy.count({ where: { userId, soldAt: null } }),
-		context.prisma.toy.count({ where: { userId, soldAt: { not: null } } }),
-		context.prisma.toyOrder.count({ where: { buyerId: userId } })
-	])
+	const [active, sold, bought, completedSales] =
+		await context.prisma.$transaction([
+			context.prisma.toy.count({ where: { userId, soldAt: null } }),
+			context.prisma.toy.count({ where: { userId, soldAt: { not: null } } }),
+			context.prisma.toyOrder.count({ where: { buyerId: userId } }),
+			context.prisma.toyOrder.count({ where: { toy: { userId } } })
+		])
 
-	return { caching: false, data: { active, sold, bought } }
+	// Buyers get coins for every purchase and sellers for every sale
+	const coins = bought * coinsPerPurchase + completedSales * coinsPerSale
+
+	return { caching: false, data: { active, sold, bought, coins } }
 }
 
 /** Lists the toys of the logged in user, including the sold ones */
@@ -161,10 +178,34 @@ function validateToyInput(args: {
 
 export async function createToy(
 	parent: any,
-	args: { title: string; description?: string; price: number },
+	args: {
+		title: string
+		description?: string
+		price: number
+		address?: AddressInput
+	},
 	context: ResolverContext
 ): Promise<Toy> {
 	const { title, description, price } = validateToyInput(args)
+	const userId = BigInt(context.user.Id)
+
+	// Toys can only be sold with a shipping address in the profile. If there is none
+	// yet, the address of the request is saved to the profile.
+	const profile = await context.prisma.userProfile.findUnique({
+		where: { userId }
+	})
+	let newAddress = null
+
+	if (!isAddressComplete(addressFromProfile(profile))) {
+		newAddress = cleanAddress(args.address)
+
+		throwValidationError(
+			isAddressTooLong(newAddress) ? validationErrors.addressInvalid : null,
+			!isAddressComplete(newAddress)
+				? validationErrors.addressRequired
+				: null
+		)
+	}
 
 	if (!Number.isInteger(toyTableId)) {
 		console.error("DAV_TOY_TABLE_ID is not set")
@@ -184,10 +225,20 @@ export async function createToy(
 		throwApiError(apiErrors.unexpectedError)
 	}
 
+	if (newAddress != null) {
+		const columns = addressToColumns(newAddress)
+
+		await context.prisma.userProfile.upsert({
+			where: { userId },
+			create: { userId, ...columns },
+			update: columns
+		})
+	}
+
 	return await context.prisma.toy.create({
 		data: {
 			uuid,
-			userId: BigInt(context.user.Id),
+			userId,
 			title,
 			description,
 			price

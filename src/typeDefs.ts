@@ -14,7 +14,12 @@ export const typeDefs = `#graphql
 	}
 
 	type Mutation {
-		createToy(title: String!, description: String, price: Int!): Toy!
+		createToy(
+			title: String!
+			description: String
+			price: Int!
+			address: AddressInput
+		): Toy!
 			@auth
 		updateMyProfile(
 			birthDate: String
@@ -112,6 +117,8 @@ export const typeDefs = `#graphql
 		sold: Int!
 		"Toys the user has bought"
 		bought: Int!
+		"Collected coins: 15 for every purchase and 10 for every sale"
+		coins: Int!
 	}
 
 	type ToyList {

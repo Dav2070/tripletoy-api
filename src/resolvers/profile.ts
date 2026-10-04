@@ -4,20 +4,16 @@ import { validationErrors } from "../errors.js"
 import {
 	profileAgeMax,
 	profileDescriptionMaxLength,
-	profileAddressFieldMaxLength,
 	profilePhoneRegex
 } from "../constants.js"
 import { parseDate, calculateAge } from "../services/ageService.js"
+import {
+	AddressInput,
+	addressToColumns,
+	cleanAddress,
+	isAddressTooLong
+} from "../services/addressService.js"
 import { ResolverContext, QueryResult } from "../types.js"
-
-interface AddressInput {
-	name?: string
-	line1?: string
-	line2?: string
-	postalCode?: string
-	city?: string
-	country?: string
-}
 
 const emptyProfile = { birthDate: null, description: null }
 
@@ -49,13 +45,7 @@ export async function updateMyProfile(
 	const description = args.description?.trim() || null
 	const phone = args.phone?.trim() || null
 
-	// Empty fields are stored as null
-	const address = Object.fromEntries(
-		["name", "line1", "line2", "postalCode", "city", "country"].map(key => [
-			key,
-			(args.address?.[key] as string | undefined)?.trim() || null
-		])
-	)
+	const address = cleanAddress(args.address)
 
 	throwValidationError(
 		birthDateText != null &&
@@ -67,11 +57,7 @@ export async function updateMyProfile(
 		description != null && description.length > profileDescriptionMaxLength
 			? validationErrors.profileDescriptionTooLong
 			: null,
-		Object.values(address).some(
-			v => v != null && v.length > profileAddressFieldMaxLength
-		)
-			? validationErrors.addressInvalid
-			: null,
+		isAddressTooLong(address) ? validationErrors.addressInvalid : null,
 		phone != null && !profilePhoneRegex.test(phone)
 			? validationErrors.phoneInvalid
 			: null
@@ -83,12 +69,7 @@ export async function updateMyProfile(
 		birthDate,
 		description,
 		phone,
-		addressName: address.name,
-		addressLine1: address.line1,
-		addressLine2: address.line2,
-		addressPostalCode: address.postalCode,
-		addressCity: address.city,
-		addressCountry: address.country
+		...addressToColumns(address)
 	}
 
 	return await context.prisma.userProfile.upsert({

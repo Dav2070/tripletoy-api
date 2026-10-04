@@ -52,6 +52,23 @@ export const resolvers = {
 	ToyPhoto: {
 		url: (photo: { fileName: string }) => `/photos/${photo.fileName}`
 	},
+	Profile: {
+		address: (profile: {
+			addressName?: string | null
+			addressLine1?: string | null
+			addressLine2?: string | null
+			addressPostalCode?: string | null
+			addressCity?: string | null
+			addressCountry?: string | null
+		}) => ({
+			name: profile.addressName ?? null,
+			line1: profile.addressLine1 ?? null,
+			line2: profile.addressLine2 ?? null,
+			postalCode: profile.addressPostalCode ?? null,
+			city: profile.addressCity ?? null,
+			country: profile.addressCountry ?? null
+		})
+	},
 	ToyOrder: {
 		createdAt: (order: { createdAt: Date }) => order.createdAt.toISOString()
 	},

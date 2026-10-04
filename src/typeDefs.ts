@@ -15,7 +15,12 @@ export const typeDefs = `#graphql
 	type Mutation {
 		createToy(title: String!, description: String, price: Int!): Toy!
 			@auth
-		updateMyProfile(age: Int, description: String): Profile! @auth
+		updateMyProfile(
+			age: Int
+			description: String
+			address: AddressInput
+			phone: String
+		): Profile! @auth
 		updateToy(
 			uuid: String!
 			title: String!
@@ -30,7 +35,29 @@ export const typeDefs = `#graphql
 		): CheckoutSession! @auth
 	}
 
+	input AddressInput {
+		name: String
+		line1: String
+		line2: String
+		postalCode: String
+		city: String
+		country: String
+	}
+
+	type Address {
+		name: String
+		line1: String
+		line2: String
+		postalCode: String
+		city: String
+		country: String
+	}
+
 	type Profile {
+		"The address of the user, only visible for the user themselves"
+		address: Address
+		"The phone number of the user, only visible for the user themselves"
+		phone: String
 		age: Int
 		description: String
 	}

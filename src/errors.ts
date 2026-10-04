@@ -71,5 +71,7 @@ export const validationErrors = {
 	descriptionTooLong: "DESCRIPTION_TOO_LONG",
 	priceInvalid: "PRICE_INVALID",
 	ageInvalid: "AGE_INVALID",
+	addressInvalid: "ADDRESS_INVALID",
+	phoneInvalid: "PHONE_INVALID",
 	profileDescriptionTooLong: "PROFILE_DESCRIPTION_TOO_LONG"
 }

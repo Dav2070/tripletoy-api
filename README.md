@@ -44,11 +44,22 @@ query {
 
 ## Profil
 
-Alter und Beschreibung sind optional (Alter 1–120, Beschreibung höchstens 1000 Zeichen). Beim Speichern ersetzen die übergebenen Werte die bisherigen, ohne Wert wird das Feld geleert.
+Alter, Beschreibung, Telefonnummer und Adresse sind optional (Alter 1–120, Beschreibung höchstens 1000 Zeichen, jedes Adressfeld höchstens 100 Zeichen). Die Adresse ist nur über `retrieveMyProfile` für den Nutzer selbst abrufbar. Beim Speichern ersetzen die übergebenen Werte die bisherigen, ohne Wert wird das Feld geleert.
 
 ```graphql
 mutation {
-	updateMyProfile(age: 8, description: "Sammelt Lego") {
+	updateMyProfile(
+		age: 8
+		description: "Sammelt Lego"
+		phone: "+49 170 1234567"
+		address: {
+			name: "Max Mustermann"
+			line1: "Musterweg 1"
+			postalCode: "10115"
+			city: "Berlin"
+			country: "Deutschland"
+		}
+	) {
 		age
 		description
 	}
@@ -58,6 +69,15 @@ query {
 	retrieveMyProfile {
 		age
 		description
+		phone
+		address {
+			name
+			line1
+			line2
+			postalCode
+			city
+			country
+		}
 	}
 }
 ```

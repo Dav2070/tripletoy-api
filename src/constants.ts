@@ -4,6 +4,9 @@ export const toyDescriptionMaxLength = 5000
 export const profileAgeMin = 1
 export const profileAgeMax = 120
 export const profileDescriptionMaxLength = 1000
+export const profileAddressFieldMaxLength = 100
+// Digits, spaces and the usual separators, e.g. +49 170 1234567 or (030) 123-456
+export const profilePhoneRegex = /^[0-9+()\/.\- ]{3,30}$/
 // Stripe requires at least 0.50 €, dav allows at most 1000 € per order
 export const toyPriceMin = 50
 export const toyPriceMax = 100_000

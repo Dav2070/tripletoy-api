@@ -58,6 +58,13 @@ model UserProfile {
   userId      BigInt   @unique
   age         Int?
   description String?  @db.VarChar
+  phone       String?  @db.VarChar
+  addressName       String?  @db.VarChar
+  addressLine1      String?  @db.VarChar
+  addressLine2      String?  @db.VarChar
+  addressPostalCode String?  @db.VarChar
+  addressCity       String?  @db.VarChar
+  addressCountry    String?  @db.VarChar
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 }

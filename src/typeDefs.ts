@@ -7,6 +7,7 @@ export const typeDefs = `#graphql
 			limit: Int
 			offset: Int
 		): ToyList!
+		listToyLocations: [ToyLocation!]!
 		listMyToys(limit: Int, offset: Int): ToyList! @auth
 		listMyPurchases(limit: Int, offset: Int): ToyList! @auth
 		retrieveMyToyStats: ToyStats! @auth
@@ -108,6 +109,16 @@ export const typeDefs = `#graphql
 	type ToyPhoto {
 		uuid: String!
 		url: String!
+	}
+
+	"A toy for sale at the approximate position of its seller"
+	type ToyLocation {
+		uuid: String!
+		title: String!
+		price: Int!
+		latitude: Float!
+		longitude: Float!
+		photo: ToyPhoto
 	}
 
 	type ToyStats {

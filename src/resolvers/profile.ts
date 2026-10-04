@@ -9,10 +9,10 @@ import {
 import { parseDate, calculateAge } from "../services/ageService.js"
 import {
 	AddressInput,
-	addressToColumns,
 	cleanAddress,
 	isAddressTooLong
 } from "../services/addressService.js"
+import { getAddressColumns } from "../services/geocodingService.js"
 import { ResolverContext, QueryResult } from "../types.js"
 
 const emptyProfile = { birthDate: null, description: null }
@@ -65,11 +65,15 @@ export async function updateMyProfile(
 
 	const userId = BigInt(context.user.Id)
 
+	const existing = await context.prisma.userProfile.findUnique({
+		where: { userId }
+	})
+
 	const data = {
 		birthDate,
 		description,
 		phone,
-		...addressToColumns(address)
+		...(await getAddressColumns(address, existing))
 	}
 
 	return await context.prisma.userProfile.upsert({

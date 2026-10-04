@@ -114,6 +114,22 @@ query {
 }
 ```
 
+## Karte
+
+`listToyLocations` liefert die ungefähre Position der Spielzeuge, die zum Verkauf stehen (höchstens 500). Die Position kommt aus der Adresse des Verkäufers: Beim Speichern der Adresse wird nur **Postleitzahl, Ort und Land** (nicht die Straße) an den Geocoder geschickt (`GEOCODER_URL`, standardmäßig OpenStreetMap Nominatim, `GEOCODER_USER_AGENT` sollte einen Kontakt enthalten). Die Koordinaten werden auf zwei Nachkommastellen (ca. 1 km) gerundet im Profil gespeichert. Spielzeuge von Verkäufern ohne Position erscheinen nicht auf der Karte, und wenn der Geocoder nicht erreichbar ist, wird die Adresse trotzdem gespeichert.
+
+```graphql
+query {
+	listToyLocations {
+		uuid
+		title
+		price
+		latitude
+		longitude
+	}
+}
+```
+
 ## Spielzeug einstellen
 
 Erfordert den `Authorization`-Header mit dem dav-Access-Token. Der Preis wird in Cent angegeben (50 bis 100.000, also 0,50 € bis 1.000 €). Beim Erstellen wird zusätzlich ein dav-TableObject mit derselben UUID angelegt. Zum Verkaufen braucht der Nutzer eine vollständige Adresse im Profil (Name, Straße, PLZ, Ort und Land). Hat er noch keine, muss `address` mitgeschickt werden und wird im Profil gespeichert, sonst kommt `ADDRESS_REQUIRED`.

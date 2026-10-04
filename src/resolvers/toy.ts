@@ -5,11 +5,11 @@ import { deletePhotoFiles } from "../services/photoStorage.js"
 import {
 	AddressInput,
 	addressFromProfile,
-	addressToColumns,
 	cleanAddress,
 	isAddressComplete,
 	isAddressTooLong
 } from "../services/addressService.js"
+import { getAddressColumns } from "../services/geocodingService.js"
 import { throwApiError, throwValidationError } from "../utils.js"
 import { apiErrors, validationErrors } from "../errors.js"
 import {
@@ -20,7 +20,8 @@ import {
 	toyTableId,
 	soldToyVisibleDays,
 	coinsPerPurchase,
-	coinsPerSale
+	coinsPerSale,
+	toyLocationsMax
 } from "../constants.js"
 import { ResolverContext, QueryResult, List } from "../types.js"
 
@@ -138,6 +139,42 @@ export async function retrieveMyToyStats(
 	return { caching: false, data: { active, sold, bought, coins } }
 }
 
+/** Lists the approximate positions of the toys that are for sale, for the map */
+export async function listToyLocations(
+	parent: any,
+	args: {},
+	context: ResolverContext
+): Promise<QueryResult<any[]>> {
+	const toys = await context.prisma.toy.findMany({
+		where: { soldAt: null },
+		orderBy: { id: "desc" },
+		take: toyLocationsMax,
+		include: { photos: { orderBy: { id: "asc" }, take: 1 } }
+	})
+
+	const profiles = await context.prisma.userProfile.findMany({
+		where: {
+			userId: { in: [...new Set(toys.map(t => t.userId))] },
+			latitude: { not: null },
+			longitude: { not: null }
+		}
+	})
+	const profilesByUserId = new Map(profiles.map(p => [p.userId, p]))
+
+	const data = toys
+		.filter(toy => profilesByUserId.has(toy.userId))
+		.map(toy => ({
+			uuid: toy.uuid,
+			title: toy.title,
+			price: toy.price,
+			latitude: profilesByUserId.get(toy.userId).latitude,
+			longitude: profilesByUserId.get(toy.userId).longitude,
+			photo: toy.photos[0] ?? null
+		}))
+
+	return { caching: true, data }
+}
+
 /** Lists the toys of the logged in user, including the sold ones */
 export async function listMyToys(
 	parent: any,
@@ -226,7 +263,7 @@ export async function createToy(
 	}
 
 	if (newAddress != null) {
-		const columns = addressToColumns(newAddress)
+		const columns = await getAddressColumns(newAddress, profile)
 
 		await context.prisma.userProfile.upsert({
 			where: { userId },

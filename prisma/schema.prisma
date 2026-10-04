@@ -67,6 +67,9 @@ model UserProfile {
   addressPostalCode String?  @db.VarChar
   addressCity       String?  @db.VarChar
   addressCountry    String?  @db.VarChar
+  // Approximate position (postal code area) of the address, used for the map
+  latitude          Float?
+  longitude         Float?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
 }

@@ -13,12 +13,8 @@ export const resolvers = {
 			info: any
 		) =>
 			cachingResolver(parent, args, context, info, toyResolvers.retrieveToy),
-		listToys: (
-			parent: any,
-			args: any,
-			context: ResolverContext,
-			info: any
-		) => cachingResolver(parent, args, context, info, toyResolvers.listToys),
+		listToys: (parent: any, args: any, context: ResolverContext, info: any) =>
+			cachingResolver(parent, args, context, info, toyResolvers.listToys),
 		listMyToys: (
 			parent: any,
 			args: any,
@@ -26,6 +22,19 @@ export const resolvers = {
 			info: any
 		) =>
 			cachingResolver(parent, args, context, info, toyResolvers.listMyToys),
+		listMyPurchases: (
+			parent: any,
+			args: any,
+			context: ResolverContext,
+			info: any
+		) =>
+			cachingResolver(
+				parent,
+				args,
+				context,
+				info,
+				toyResolvers.listMyPurchases
+			),
 		retrieveMyProfile: (
 			parent: any,
 			args: any,
@@ -50,6 +59,15 @@ export const resolvers = {
 		sold: (toy: { soldAt: Date | null }) => toy.soldAt != null,
 		mine: (toy: { userId: bigint }, args: any, context: ResolverContext) =>
 			context.user != null && BigInt(context.user.Id) == toy.userId,
+		bought: async (
+			toy: { id: bigint },
+			args: any,
+			context: ResolverContext
+		) =>
+			context.user != null &&
+			(await context.prisma.toyOrder.count({
+				where: { toyId: toy.id, buyerId: BigInt(context.user.Id) }
+			})) > 0,
 		// Only the seller may see who bought the toy
 		order: async (
 			toy: { id: bigint; userId: bigint },

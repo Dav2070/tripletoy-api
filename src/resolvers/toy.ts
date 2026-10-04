@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { TableObjectsController } from "dav-js"
-import { Toy } from "../generated/prisma/client.js"
+import { Toy, Prisma } from "../generated/prisma/client.js"
 import { deletePhotoFiles } from "../services/photoStorage.js"
 import { throwApiError, throwValidationError } from "../utils.js"
 import { apiErrors, validationErrors } from "../errors.js"
@@ -9,7 +9,8 @@ import {
 	toyDescriptionMaxLength,
 	toyPriceMin,
 	toyPriceMax,
-	toyTableId
+	toyTableId,
+	soldToyVisibleDays
 } from "../constants.js"
 import { ResolverContext, QueryResult, List } from "../types.js"
 
@@ -32,7 +33,10 @@ export async function retrieveToy(
 async function findToys(
 	args: { limit?: number; offset?: number },
 	context: ResolverContext,
-	where?: { userId: bigint }
+	where?: Prisma.ToyWhereInput,
+	orderBy:
+		| Prisma.ToyOrderByWithRelationInput
+		| Prisma.ToyOrderByWithRelationInput[] = { id: "desc" }
 ): Promise<List<Toy>> {
 	let take = args.limit || 10
 	if (take <= 0) take = 10
@@ -44,7 +48,7 @@ async function findToys(
 		context.prisma.toy.count({ where }),
 		context.prisma.toy.findMany({
 			where,
-			orderBy: { id: "desc" },
+			orderBy,
 			include: toyInclude,
 			take,
 			skip
@@ -61,11 +65,46 @@ export async function listToys(
 ): Promise<QueryResult<List<Toy>>> {
 	return {
 		caching: true,
-		data: await findToys(args, context)
+		// Sold toys are only listed for a week, afterwards they are only shown
+		// to the seller and the buyer. Unsold toys come first, then the sold ones.
+		data: await findToys(
+			args,
+			context,
+			{
+				OR: [
+					{ soldAt: null },
+					{
+						soldAt: {
+							gte: new Date(
+								Date.now() - soldToyVisibleDays * 24 * 60 * 60 * 1000
+							)
+						}
+					}
+				]
+			},
+			[{ soldAt: { sort: "desc", nulls: "first" } }, { id: "desc" }]
+		)
 	}
 }
 
-/** Lists the toys of the logged in user */
+/** Lists the toys the logged in user has bought, the latest purchase first */
+export async function listMyPurchases(
+	parent: any,
+	args: { limit?: number; offset?: number },
+	context: ResolverContext
+): Promise<QueryResult<List<Toy>>> {
+	return {
+		caching: false,
+		data: await findToys(
+			args,
+			context,
+			{ order: { is: { buyerId: BigInt(context.user.Id) } } },
+			{ order: { createdAt: "desc" } }
+		)
+	}
+}
+
+/** Lists the toys of the logged in user, including the sold ones */
 export async function listMyToys(
 	parent: any,
 	args: { limit?: number; offset?: number },

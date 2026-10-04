@@ -7,6 +7,8 @@ export const profileDescriptionMaxLength = 1000
 // Stripe requires at least 0.50 €, dav allows at most 1000 € per order
 export const toyPriceMin = 50
 export const toyPriceMax = 100_000
+// Sold toys stay visible in the public list for this long after the sale
+export const soldToyVisibleDays = 7
 export const toyPhotoMaxCount = 10
 export const toyPhotoMaxBytes = 10 * 1024 * 1024
 export const uploadsDir = process.env.UPLOADS_DIR || "uploads"

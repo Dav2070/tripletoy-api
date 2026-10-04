@@ -8,6 +8,7 @@ export const typeDefs = `#graphql
 			offset: Int
 		): ToyList!
 		listMyToys(limit: Int, offset: Int): ToyList! @auth
+		listMyPurchases(limit: Int, offset: Int): ToyList! @auth
 		retrieveMyProfile: Profile! @auth
 	}
 
@@ -43,6 +44,8 @@ export const typeDefs = `#graphql
 		sold: Boolean!
 		"Whether the logged in user is the seller"
 		mine: Boolean!
+		"Whether the logged in user has bought the toy"
+		bought: Boolean!
 		"The order of the toy, only visible for the seller"
 		order: ToyOrder
 		createdAt: String!

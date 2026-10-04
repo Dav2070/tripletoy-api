@@ -62,6 +62,20 @@ query {
 }
 ```
 
+Verkaufte Spielzeuge erscheinen noch sieben Tage nach dem Verkauf in `listToys` (hinter den unverkauften), danach nicht mehr. Der Verkäufer sieht sie weiter in `listMyToys` (mit `sold: true`), der Käufer in `listMyPurchases`. Über die UUID bleiben sie abrufbar, `Toy.bought` zeigt dem Käufer, dass er das Spielzeug gekauft hat.
+
+```graphql
+query {
+	listMyPurchases(limit: 24) {
+		total
+		items {
+			uuid
+			title
+		}
+	}
+}
+```
+
 ## Spielzeug einstellen
 
 Erfordert den `Authorization`-Header mit dem dav-Access-Token. Der Preis wird in Cent angegeben (50 bis 100.000, also 0,50 € bis 1.000 €). Beim Erstellen wird zusätzlich ein dav-TableObject mit derselben UUID angelegt.

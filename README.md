@@ -189,6 +189,7 @@ Ein Foto entfernst du mit `DELETE /toys/<uuid>/photos/<foto-uuid>` (ebenfalls mi
 Bezahlt wird mit dem dav-Checkout (Stripe), wie in PocketLib. Voraussetzungen in `.env`:
 
 - `DAV_TOY_TABLE_ID`: Id der Tabelle „Toy“ der App im dav-Dashboard (muss dort angelegt werden)
+- `FIXED_PRODUCTS_USER_ID` (optional): Id des dav-Nutzers, dem die Festprodukte gehören. Seine Spielzeuge fehlen in `listToys` und stehen stattdessen in `listFixedToys` (alle, auch verkaufte)
 - `DAV_WEBHOOK_KEY`: derselbe Wert wie `WEBHOOK_KEY` in dav-api
 - `PUBLIC_URL`: öffentliche URL dieser API (Produktbild im Checkout)
 

@@ -10,6 +10,8 @@ export const typeDefs = `#graphql
 			latitude: Float
 			longitude: Float
 		): ToyList!
+		"The fixed products, which are always shown separately from the other toys"
+		listFixedToys: [Toy!]!
 		listToyLocations: [ToyLocation!]!
 		listMyToys(limit: Int, offset: Int): ToyList! @auth
 		listMyPurchases(limit: Int, offset: Int): ToyList! @auth

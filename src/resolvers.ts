@@ -16,6 +16,13 @@ export const resolvers = {
 			cachingResolver(parent, args, context, info, toyResolvers.retrieveToy),
 		listToys: (parent: any, args: any, context: ResolverContext, info: any) =>
 			cachingResolver(parent, args, context, info, toyResolvers.listToys),
+		listFixedToys: (
+			parent: any,
+			args: any,
+			context: ResolverContext,
+			info: any
+		) =>
+			cachingResolver(parent, args, context, info, toyResolvers.listFixedToys),
 		listToyLocations: (
 			parent: any,
 			args: any,

@@ -21,9 +21,13 @@ import {
 	soldToyVisibleDays,
 	coinsPerPurchase,
 	coinsPerSale,
-	toyLocationsMax
+	toyLocationsMax,
+	fixedProductsUserId
 } from "../constants.js"
 import { ResolverContext, QueryResult, List } from "../types.js"
+
+// Maximum number of fixed products
+const fixedToysMax = 50
 
 const toyInclude = { photos: { orderBy: { id: "asc" } } } as const
 
@@ -85,7 +89,11 @@ export async function listToys(
 		Date.now() - soldToyVisibleDays * 24 * 60 * 60 * 1000
 	)
 	const where: Prisma.ToyWhereInput = {
-		OR: [{ soldAt: null }, { soldAt: { gte: soldSince } }]
+		OR: [{ soldAt: null }, { soldAt: { gte: soldSince } }],
+		// The fixed products are listed separately
+		...(fixedProductsUserId != null && {
+			userId: { not: fixedProductsUserId }
+		})
 	}
 
 	if (args.latitude != null || args.longitude != null) {
@@ -121,6 +129,25 @@ export async function listToys(
 	}
 }
 
+/** Lists the fixed products, which are the toys of the user with FIXED_PRODUCTS_USER_ID */
+export async function listFixedToys(
+	parent: any,
+	args: {},
+	context: ResolverContext
+): Promise<QueryResult<Toy[]>> {
+	if (fixedProductsUserId == null) return { caching: true, data: [] }
+
+	return {
+		caching: true,
+		data: await context.prisma.toy.findMany({
+			where: { userId: fixedProductsUserId },
+			orderBy: { id: "asc" },
+			include: toyInclude,
+			take: fixedToysMax
+		})
+	}
+}
+
 /**
  * Lists the toys sorted by the distance of the seller to the given position. The
  * distance is the great-circle distance in kilometers to the approximate position of
@@ -151,7 +178,8 @@ async function findToysByDistance(
 				)) AS "distance"
 			FROM "Toy" t
 			LEFT JOIN "UserProfile" p ON p."userId" = t."userId"
-			WHERE t."soldAt" IS NULL OR t."soldAt" >= ${soldSince}::timestamp
+			WHERE (t."soldAt" IS NULL OR t."soldAt" >= ${soldSince}::timestamp)
+				AND (${fixedProductsUserId}::bigint IS NULL OR t."userId" <> ${fixedProductsUserId}::bigint)
 			ORDER BY (t."soldAt" IS NOT NULL) ASC, "distance" ASC NULLS LAST, t."id" DESC
 			LIMIT ${take} OFFSET ${skip}
 		`

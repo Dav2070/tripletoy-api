@@ -1,4 +1,3 @@
-export const admins = [1]
 export const toyTitleMaxLength = 100
 export const toyDescriptionMaxLength = 5000
 export const profileAgeMax = 120
@@ -25,6 +24,9 @@ export const toyPhotoMaxBytes = 10 * 1024 * 1024
 export const fixedProductsUserId = process.env.FIXED_PRODUCTS_USER_ID
 	? BigInt(process.env.FIXED_PRODUCTS_USER_ID)
 	: null
+// The user with FIXED_PRODUCTS_USER_ID is the admin, who manages the events
+export const admins =
+	fixedProductsUserId != null ? [Number(fixedProductsUserId)] : []
 // The id of the dav user that uploads the handmade jewelry for kids. Their toys are the
 // jewelry, which is shown on its own page and is not part of the other toy lists.
 export const jewelryUserId = process.env.JEWELRY_USER_ID

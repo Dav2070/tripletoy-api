@@ -229,5 +229,5 @@ Bei jeder bezahlten Bestellung (Spielzeug oder Zeichnung, `davWebhook`) und bei 
 Events sind Veranstaltungen in der realen Welt für Kinder und liegen in der Tabelle `Event` (nach dem Update `npx prisma db push` ausführen).
 
 - `listEvents(latitude, longitude, radius)` (ohne Login) liefert die kommenden Events im Umkreis (Standard 50 km, höchstens 500 km), die nächsten zuerst, mit `distance` in km. Events ohne Endzeit gelten ab dem Beginn noch 3 Stunden als bevorstehend. Das Ergebnis hängt vom Standort ab und wird nicht gecacht.
-- Admins (`admins` in `src/constants.ts`) verwalten die Events mit `listAllEvents` (auch vergangene) sowie `createEvent`, `updateEvent` und `deleteEvent`. `Profile.isAdmin` zeigt dem Frontend, ob der Nutzer Admin ist.
+- Admin ist der Nutzer mit `FIXED_PRODUCTS_USER_ID` (ohne diese Variable gibt es keinen Admin). Er verwaltet die Events mit `listAllEvents` (auch vergangene) sowie `createEvent`, `updateEvent` und `deleteEvent`. `Profile.isAdmin` zeigt dem Frontend, ob der Nutzer Admin ist.
 - Die Position eines Events wird beim Speichern über den Geocoder aus Postleitzahl, Stadt und Land bestimmt (ungefähr, wie bei den Spielzeugen). Wird der Ort nicht gefunden, schlägt das Speichern mit `EVENT_LOCATION_NOT_FOUND` fehl.

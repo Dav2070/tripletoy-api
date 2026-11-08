@@ -23,12 +23,20 @@ import {
 	coinsPerSale,
 	coinsPerDrawing,
 	toyLocationsMax,
-	fixedProductsUserId
+	fixedProductsUserId,
+	jewelryUserId
 } from "../constants.js"
 import { ResolverContext, QueryResult, List } from "../types.js"
 
 // Maximum number of fixed products
 const fixedToysMax = 50
+// Maximum number of jewelry products
+const jewelryMax = 100
+
+// The ids of the users whose toys are not part of the normal toy lists
+const separateUserIds = [fixedProductsUserId, jewelryUserId].filter(
+	(id): id is bigint => id != null
+)
 
 const toyInclude = { photos: { orderBy: { id: "asc" } } } as const
 
@@ -91,9 +99,9 @@ export async function listToys(
 	)
 	const where: Prisma.ToyWhereInput = {
 		OR: [{ soldAt: null }, { soldAt: { gte: soldSince } }],
-		// The fixed products are listed separately
-		...(fixedProductsUserId != null && {
-			userId: { not: fixedProductsUserId }
+		// The fixed products and the jewelry are listed separately
+		...(separateUserIds.length > 0 && {
+			userId: { notIn: separateUserIds }
 		})
 	}
 
@@ -149,6 +157,25 @@ export async function listFixedToys(
 	}
 }
 
+/** Lists the jewelry, which are the toys of the user with JEWELRY_USER_ID */
+export async function listJewelry(
+	parent: any,
+	args: {},
+	context: ResolverContext
+): Promise<QueryResult<Toy[]>> {
+	if (jewelryUserId == null) return { caching: true, data: [] }
+
+	return {
+		caching: true,
+		data: await context.prisma.toy.findMany({
+			where: { userId: jewelryUserId },
+			orderBy: { id: "desc" },
+			include: toyInclude,
+			take: jewelryMax
+		})
+	}
+}
+
 /**
  * Lists the toys sorted by the distance of the seller to the given position. The
  * distance is the great-circle distance in kilometers to the approximate position of
@@ -181,6 +208,7 @@ async function findToysByDistance(
 			LEFT JOIN "UserProfile" p ON p."userId" = t."userId"
 			WHERE (t."soldAt" IS NULL OR t."soldAt" >= ${soldSince}::timestamp)
 				AND (${fixedProductsUserId}::bigint IS NULL OR t."userId" <> ${fixedProductsUserId}::bigint)
+				AND (${jewelryUserId}::bigint IS NULL OR t."userId" <> ${jewelryUserId}::bigint)
 			ORDER BY (t."soldAt" IS NOT NULL) ASC, "distance" ASC NULLS LAST, t."id" DESC
 			LIMIT ${take} OFFSET ${skip}
 		`
@@ -256,7 +284,12 @@ export async function listToyLocations(
 	context: ResolverContext
 ): Promise<QueryResult<any[]>> {
 	const toys = await context.prisma.toy.findMany({
-		where: { soldAt: null },
+		where: {
+			soldAt: null,
+			...(separateUserIds.length > 0 && {
+				userId: { notIn: separateUserIds }
+			})
+		},
 		orderBy: { id: "desc" },
 		take: toyLocationsMax,
 		include: { photos: { orderBy: { id: "asc" }, take: 1 } }

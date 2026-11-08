@@ -12,6 +12,8 @@ export const typeDefs = `#graphql
 		): ToyList!
 		"The fixed products, which are always shown separately from the other toys"
 		listFixedToys: [Toy!]!
+		"The handmade jewelry for kids, which is shown on its own page"
+		listJewelry: [Toy!]!
 		listToyLocations: [ToyLocation!]!
 		listMyToys(limit: Int, offset: Int): ToyList! @auth
 		listMyPurchases(limit: Int, offset: Int): ToyList! @auth

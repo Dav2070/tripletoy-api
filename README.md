@@ -198,6 +198,7 @@ Bezahlt wird mit dem dav-Checkout (Stripe), wie in PocketLib. Voraussetzungen in
 
 - `DAV_TOY_TABLE_ID`: Id der Tabelle „Toy“ der App im dav-Dashboard (muss dort angelegt werden)
 - `FIXED_PRODUCTS_USER_ID` (optional): Id des dav-Nutzers, dem die Festprodukte gehören. Seine Spielzeuge fehlen in `listToys` und stehen stattdessen in `listFixedToys` (alle, auch verkaufte)
+- `JEWELRY_USER_ID` (optional): Id des dav-Nutzers, der den handgemachten Kinderschmuck hochlädt. Er legt den Schmuck wie normale Spielzeuge an (Seite „Spielzeug verkaufen“); seine Spielzeuge fehlen in `listToys` und `listToyLocations` und stehen stattdessen in `listJewelry` (alle, auch verkaufte)
 - `DAV_WEBHOOK_KEY`: derselbe Wert wie `WEBHOOK_KEY` in dav-api
 - `PUBLIC_URL`: öffentliche URL dieser API (Produktbild im Checkout)
 

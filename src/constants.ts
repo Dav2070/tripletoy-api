@@ -25,6 +25,11 @@ export const toyPhotoMaxBytes = 10 * 1024 * 1024
 export const fixedProductsUserId = process.env.FIXED_PRODUCTS_USER_ID
 	? BigInt(process.env.FIXED_PRODUCTS_USER_ID)
 	: null
+// The id of the dav user that uploads the handmade jewelry for kids. Their toys are the
+// jewelry, which is shown on its own page and is not part of the other toy lists.
+export const jewelryUserId = process.env.JEWELRY_USER_ID
+	? BigInt(process.env.JEWELRY_USER_ID)
+	: null
 // Maximum number of drawings per user
 export const drawingMaxCount = 20
 // Price of turning a drawing into a toy in cents

@@ -58,6 +58,16 @@ export const apiErrors = {
 		message: "The photo is too large",
 		status: 413
 	},
+	drawingDoesNotExist: {
+		code: "DRAWING_NOT_EXISTS",
+		message: "Drawing does not exist",
+		status: 404
+	},
+	drawingAlreadyPaid: {
+		code: "DRAWING_ALREADY_PAID",
+		message: "The drawing has already been paid",
+		status: 409
+	},
 	tooManyDrawings: {
 		code: "TOO_MANY_DRAWINGS",
 		message: "You have uploaded too many drawings",

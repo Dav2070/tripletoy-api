@@ -54,6 +54,7 @@ model ToyPhoto {
 }
 
 enum DrawingStatus {
+  PENDING_PAYMENT
   RECEIVED
   IN_PROGRESS
   COMPLETED
@@ -66,11 +67,33 @@ model Drawing {
   uuid      String        @unique @default(uuid()) @db.VarChar
   userId    BigInt
   fileName  String        @db.VarChar
-  status    DrawingStatus @default(RECEIVED)
+  status    DrawingStatus @default(PENDING_PAYMENT)
   createdAt DateTime      @default(now())
   updatedAt DateTime      @default(now()) @updatedAt
 
+  order     DrawingOrder?
+
   @@index([userId])
+}
+
+// The paid dav order of a drawing, including the shipping address for the finished toy
+model DrawingOrder {
+  id         BigInt   @id @default(autoincrement())
+  orderUuid  String   @unique @db.VarChar
+  drawingId  BigInt   @unique
+  drawing    Drawing  @relation(fields: [drawingId], references: [id], onDelete: Cascade)
+  buyerId    BigInt
+  price      Int
+  name       String   @db.VarChar
+  email      String   @db.VarChar
+  phone      String?  @db.VarChar
+  line1      String   @db.VarChar
+  line2      String?  @db.VarChar
+  postalCode String   @db.VarChar
+  city       String   @db.VarChar
+  state      String?  @db.VarChar
+  country    String   @db.VarChar
+  createdAt  DateTime @default(now())
 }
 
 model UserProfile {

@@ -188,7 +188,9 @@ Ein Foto entfernst du mit `DELETE /toys/<uuid>/photos/<foto-uuid>` (ebenfalls mi
 
 Angemeldete Nutzer können Kinderzeichnungen hochladen, aus denen ein echtes Spielzeug entsteht (max. 20 Stück, je max. 10 MB, JPEG/PNG/WebP). Der Upload funktioniert wie bei den Fotos, nur an `POST /drawings` (mit `Authorization`-Header und dem rohen Bild als Body). Die Antwort enthält `uuid`, `url`, `status`, `createdAt` und `updatedAt`.
 
-`listMyDrawings(limit, offset)` (mit Login) liefert die eigenen Zeichnungen, die neuesten zuerst, mit dem Status `RECEIVED`, `IN_PROGRESS`, `COMPLETED` oder `REJECTED`. Neue Zeichnungen haben `RECEIVED`. Den Status ändert vorerst nur ein Admin direkt in der Datenbank (Tabelle `Drawing`).
+Eine Zeichnung kostet 49,99 € (`drawingPrice`). Sie startet mit dem Status `PENDING_PAYMENT`, und beim Upload wird dafür ein TableObject in dav angelegt (Tabelle `DAV_DRAWING_TABLE_ID`, ohne Angabe die Toy-Tabelle). Bezahlt wird mit dem dav-Checkout: `createDrawingCheckoutSession(uuid, productName, successUrl, cancelUrl)` liefert die Stripe-URL. Nach der Zahlung setzt der `davWebhook` den Status auf `RECEIVED` und speichert die Bestellung samt Lieferadresse in `DrawingOrder`.
+
+`listMyDrawings(limit, offset)` (mit Login) liefert die eigenen Zeichnungen, die neuesten zuerst, mit dem Status `PENDING_PAYMENT`, `RECEIVED`, `IN_PROGRESS`, `COMPLETED` oder `REJECTED`. Den Status ändert vorerst nur ein Admin direkt in der Datenbank (Tabelle `Drawing`).
 
 ## Spielzeug kaufen
 

@@ -167,6 +167,8 @@ export const resolvers = {
 		createToy: toyResolvers.createToy,
 		updateToy: toyResolvers.updateToy,
 		deleteToy: toyResolvers.deleteToy,
+		createDrawingCheckoutSession:
+			checkoutSessionResolvers.createDrawingCheckoutSession,
 		createToyCheckoutSession:
 			checkoutSessionResolvers.createToyCheckoutSession,
 		updateMyProfile: profileResolvers.updateMyProfile

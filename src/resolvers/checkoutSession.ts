@@ -1,7 +1,7 @@
 import { CheckoutSessionsController, TableObjectPriceType } from "dav-js"
 import { throwApiError } from "../utils.js"
 import { apiErrors } from "../errors.js"
-import { publicUrl } from "../constants.js"
+import { drawingPrice, publicUrl } from "../constants.js"
 import { ResolverContext } from "../types.js"
 
 /** Creates the dav (Stripe) checkout session for buying a toy */
@@ -35,6 +35,50 @@ export async function createToyCheckoutSession(
 			currency: "EUR",
 			productName: toy.title,
 			productImage,
+			successUrl: args.successUrl,
+			cancelUrl: args.cancelUrl
+		})
+
+	const url = Array.isArray(response) ? null : response?.url
+
+	if (!url) {
+		console.error("Could not create the checkout session", response)
+		throwApiError(apiErrors.unexpectedError)
+	}
+
+	return { url }
+}
+
+/** Creates the dav (Stripe) checkout session for paying a drawing that is turned into a toy */
+export async function createDrawingCheckoutSession(
+	parent: any,
+	args: {
+		uuid: string
+		productName?: string
+		successUrl: string
+		cancelUrl: string
+	},
+	context: ResolverContext
+): Promise<{ url: string }> {
+	const drawing = await context.prisma.drawing.findFirst({
+		where: { uuid: args.uuid }
+	})
+
+	// Other users must not learn that the drawing exists
+	if (drawing == null || drawing.userId != BigInt(context.user.Id))
+		throwApiError(apiErrors.drawingDoesNotExist)
+	if (drawing.status != "PENDING_PAYMENT")
+		throwApiError(apiErrors.drawingAlreadyPaid)
+
+	const response =
+		await CheckoutSessionsController.createPaymentCheckoutSession("url", {
+			accessToken: context.accessToken,
+			tableObjectUuid: drawing.uuid,
+			type: TableObjectPriceType.Order,
+			price: drawingPrice,
+			currency: "EUR",
+			productName: args.productName?.trim().slice(0, 100) || "Zeichnung zu Spielzeug",
+			productImage: `${publicUrl}/photos/${drawing.fileName}`,
 			successUrl: args.successUrl,
 			cancelUrl: args.cancelUrl
 		})

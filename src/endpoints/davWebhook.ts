@@ -1,6 +1,7 @@
 import express, { Express, Request, Response } from "express"
 import { timingSafeEqual } from "node:crypto"
 import { Auth, OrdersController, OrderResource } from "dav-js"
+import type { Drawing } from "../generated/prisma/client.js"
 import { invalidateCache } from "../services/cachingService.js"
 import type { AppDependencies } from "../appDependencies.js"
 
@@ -13,12 +14,63 @@ function isAuthorized(header: string | undefined): boolean {
 	return actual.length == expected.length && timingSafeEqual(actual, expected)
 }
 
+/** Saves the paid order of a drawing and marks the drawing as received */
+async function completeDrawingOrder(
+	{ prisma, redis }: AppDependencies,
+	drawing: Drawing,
+	order: OrderResource,
+	address: NonNullable<OrderResource["shippingAddress"]>,
+	orderUuid: string
+) {
+	// dav repeats the webhook until it gets a 200, so this must be idempotent
+	const existingOrder = await prisma.drawingOrder.findFirst({
+		where: { OR: [{ orderUuid }, { drawingId: drawing.id }] }
+	})
+
+	if (existingOrder != null) {
+		if (existingOrder.orderUuid != orderUuid) {
+			console.error(
+				`Drawing ${drawing.uuid} was paid twice (orders ${existingOrder.orderUuid} and ${orderUuid}), one of them must be refunded`
+			)
+		}
+
+		return
+	}
+
+	await prisma.$transaction([
+		prisma.drawingOrder.create({
+			data: {
+				orderUuid,
+				drawingId: drawing.id,
+				buyerId: BigInt(order.user.id),
+				price: order.price,
+				name: address.name,
+				email: address.email,
+				phone: address.phone || null,
+				line1: address.line1,
+				line2: address.line2 || null,
+				postalCode: address.postalCode,
+				city: address.city,
+				state: address.state || null,
+				country: address.country
+			}
+		}),
+		prisma.drawing.update({
+			where: { id: drawing.id },
+			data: { status: "RECEIVED" }
+		})
+	])
+
+	await invalidateCache(redis)
+}
+
 // dav calls this url (the webhook url of the app in the dav dashboard) when an order was paid
 async function davWebhook(
 	req: Request,
 	res: Response,
-	{ prisma, redis }: AppDependencies
+	deps: AppDependencies
 ) {
+	const { prisma, redis } = deps
 	if (!isAuthorized(req.headers["authorization"])) return res.sendStatus(401)
 	if (typeof req.body?.type !== "string") return res.sendStatus(400)
 	if (req.body.type != "order.completed") return res.sendStatus(200)
@@ -78,8 +130,17 @@ async function davWebhook(
 		where: { uuid: order.tableObject.uuid }
 	})
 
-	// The table object belongs to something else than a toy
-	if (toy == null) return res.sendStatus(404)
+	if (toy == null) {
+		const drawing = await prisma.drawing.findFirst({
+			where: { uuid: order.tableObject.uuid }
+		})
+
+		// The table object belongs to something else than a toy or a drawing
+		if (drawing == null) return res.sendStatus(404)
+
+		await completeDrawingOrder(deps, drawing, order, address, orderUuid)
+		return res.sendStatus(200)
+	}
 
 	// dav repeats the webhook until it gets a 200, so this must be idempotent
 	const existingOrder = await prisma.toyOrder.findFirst({

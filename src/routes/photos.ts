@@ -2,6 +2,7 @@ import express from "express"
 import { randomUUID } from "node:crypto"
 import { mkdir, writeFile } from "node:fs/promises"
 import path from "node:path"
+import { TableObjectsController } from "dav-js"
 import { retrieveUserByAccessToken } from "../services/userService.js"
 import { invalidateCache } from "../services/cachingService.js"
 import { deletePhotoFiles, uploadsRoot } from "../services/photoStorage.js"
@@ -9,6 +10,7 @@ import { apiErrors } from "../errors.js"
 import {
 	drawingMaxBytes,
 	drawingMaxCount,
+	drawingTableId,
 	toyPhotoMaxBytes,
 	toyPhotoMaxCount
 } from "../constants.js"
@@ -185,6 +187,25 @@ export function createPhotosRouter(dependencies: AppDependencies) {
 				if (count >= drawingMaxCount)
 					return sendError(res, apiErrors.tooManyDrawings)
 
+				if (!Number.isInteger(drawingTableId)) {
+					console.error("DAV_DRAWING_TABLE_ID and DAV_TOY_TABLE_ID are not set")
+					return sendError(res, apiErrors.unexpectedError)
+				}
+
+				// The drawing needs a TableObject in dav, so that it can be paid with the dav checkout
+				const uuid = randomUUID()
+				const tableObjectResponse =
+					await TableObjectsController.createTableObject("uuid", {
+						accessToken: req.headers.authorization,
+						uuid,
+						tableId: drawingTableId
+					})
+
+				if (tableObjectResponse == null || Array.isArray(tableObjectResponse)) {
+					console.error("Could not create the TableObject", tableObjectResponse)
+					return sendError(res, apiErrors.unexpectedError)
+				}
+
 				const fileName = `${randomUUID()}.${extension}`
 				await mkdir(root, { recursive: true })
 				await writeFile(path.join(root, fileName), data)
@@ -192,7 +213,7 @@ export function createPhotosRouter(dependencies: AppDependencies) {
 				let drawing
 				try {
 					drawing = await dependencies.prisma.drawing.create({
-						data: { userId, fileName }
+						data: { uuid, userId, fileName }
 					})
 				} catch (error) {
 					await deletePhotoFiles([fileName])

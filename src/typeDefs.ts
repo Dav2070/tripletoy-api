@@ -41,6 +41,12 @@ export const typeDefs = `#graphql
 			price: Int!
 		): Toy! @auth
 		deleteToy(uuid: String!): Boolean! @auth
+		createDrawingCheckoutSession(
+			uuid: String!
+			productName: String
+			successUrl: String!
+			cancelUrl: String!
+		): CheckoutSession! @auth
 		createToyCheckoutSession(
 			uuid: String!
 			successUrl: String!
@@ -115,6 +121,8 @@ export const typeDefs = `#graphql
 	}
 
 	enum DrawingStatus {
+		"Created, but not paid yet"
+		PENDING_PAYMENT
 		RECEIVED
 		IN_PROGRESS
 		COMPLETED

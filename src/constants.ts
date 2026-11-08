@@ -25,11 +25,15 @@ export const fixedProductsUserId = process.env.FIXED_PRODUCTS_USER_ID
 	: null
 // Maximum number of drawings per user
 export const drawingMaxCount = 20
+// Price of turning a drawing into a toy in cents
+export const drawingPrice = 4999
 export const drawingMaxBytes = 10 * 1024 * 1024
 export const uploadsDir = process.env.UPLOADS_DIR || "uploads"
 
 // The id of the Toy table of the app in the dav dashboard
 export const toyTableId = Number(process.env.DAV_TOY_TABLE_ID)
+// The table of the dav dashboard for the drawings, the table of the toys if not set
+export const drawingTableId = Number(process.env.DAV_DRAWING_TABLE_ID) || toyTableId
 // Public base url of this API, used for the product images in the checkout
 export const publicUrl = (
 	process.env.PUBLIC_URL || `http://localhost:${process.env.PORT || 4002}`

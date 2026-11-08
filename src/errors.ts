@@ -58,6 +58,11 @@ export const apiErrors = {
 		message: "The photo is too large",
 		status: 413
 	},
+	tooManyDrawings: {
+		code: "TOO_MANY_DRAWINGS",
+		message: "You have uploaded too many drawings",
+		status: 400
+	},
 	tooManyPhotos: {
 		code: "TOO_MANY_PHOTOS",
 		message: "The toy has too many photos",

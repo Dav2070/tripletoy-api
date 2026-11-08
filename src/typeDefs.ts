@@ -15,6 +15,7 @@ export const typeDefs = `#graphql
 		listToyLocations: [ToyLocation!]!
 		listMyToys(limit: Int, offset: Int): ToyList! @auth
 		listMyPurchases(limit: Int, offset: Int): ToyList! @auth
+		listMyDrawings(limit: Int, offset: Int): DrawingList! @auth
 		retrieveMyToyStats: ToyStats! @auth
 		retrieveMyProfile: Profile! @auth
 	}
@@ -111,6 +112,27 @@ export const typeDefs = `#graphql
 
 	type CheckoutSession {
 		url: String!
+	}
+
+	enum DrawingStatus {
+		RECEIVED
+		IN_PROGRESS
+		COMPLETED
+		REJECTED
+	}
+
+	"The drawing of a child that is turned into a real toy"
+	type Drawing {
+		uuid: String!
+		url: String!
+		status: DrawingStatus!
+		createdAt: String!
+		updatedAt: String!
+	}
+
+	type DrawingList {
+		total: Int!
+		items: [Drawing!]!
 	}
 
 	type ToyPhoto {

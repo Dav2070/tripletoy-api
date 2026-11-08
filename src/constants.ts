@@ -23,6 +23,9 @@ export const toyPhotoMaxBytes = 10 * 1024 * 1024
 export const fixedProductsUserId = process.env.FIXED_PRODUCTS_USER_ID
 	? BigInt(process.env.FIXED_PRODUCTS_USER_ID)
 	: null
+// Maximum number of drawings per user
+export const drawingMaxCount = 20
+export const drawingMaxBytes = 10 * 1024 * 1024
 export const uploadsDir = process.env.UPLOADS_DIR || "uploads"
 
 // The id of the Toy table of the app in the dav dashboard

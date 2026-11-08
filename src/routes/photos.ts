@@ -6,7 +6,12 @@ import { retrieveUserByAccessToken } from "../services/userService.js"
 import { invalidateCache } from "../services/cachingService.js"
 import { deletePhotoFiles, uploadsRoot } from "../services/photoStorage.js"
 import { apiErrors } from "../errors.js"
-import { toyPhotoMaxBytes, toyPhotoMaxCount, uploadsDir } from "../constants.js"
+import {
+	drawingMaxBytes,
+	drawingMaxCount,
+	toyPhotoMaxBytes,
+	toyPhotoMaxCount
+} from "../constants.js"
 import type { ApiError } from "../types.js"
 import type { AppDependencies } from "../appDependencies.js"
 
@@ -139,6 +144,68 @@ export function createPhotosRouter(dependencies: AppDependencies) {
 				res.status(201).json({
 					uuid: photo.uuid,
 					url: `/photos/${fileName}`
+				})
+			} catch (error) {
+				console.error(error)
+				sendError(res, apiErrors.unexpectedError)
+			}
+		}
+	)
+
+	// Uploads a drawing of the logged in user, the body is the raw image
+	router.post(
+		"/drawings",
+		express.raw({ type: photoContentTypes, limit: drawingMaxBytes }),
+		async (req, res) => {
+			try {
+				let user
+				try {
+					user = await retrieveUserByAccessToken(req.headers.authorization)
+				} catch (error) {
+					return sendError(
+						res,
+						error?.extensions?.code == apiErrors.davApiUnavailable.code
+							? apiErrors.davApiUnavailable
+							: apiErrors.sessionExpired
+					)
+				}
+				if (user == null) return sendError(res, apiErrors.notAuthenticated)
+
+				const data: unknown = req.body
+				if (!Buffer.isBuffer(data) || data.length == 0)
+					return sendError(res, apiErrors.photoInvalid)
+
+				const extension = detectImageExtension(data)
+				if (extension == null) return sendError(res, apiErrors.photoInvalid)
+
+				const userId = BigInt(user.Id)
+				const count = await dependencies.prisma.drawing.count({
+					where: { userId }
+				})
+				if (count >= drawingMaxCount)
+					return sendError(res, apiErrors.tooManyDrawings)
+
+				const fileName = `${randomUUID()}.${extension}`
+				await mkdir(root, { recursive: true })
+				await writeFile(path.join(root, fileName), data)
+
+				let drawing
+				try {
+					drawing = await dependencies.prisma.drawing.create({
+						data: { userId, fileName }
+					})
+				} catch (error) {
+					await deletePhotoFiles([fileName])
+					throw error
+				}
+
+				await invalidateCache(dependencies.redis)
+				res.status(201).json({
+					uuid: drawing.uuid,
+					url: `/photos/${fileName}`,
+					status: drawing.status,
+					createdAt: drawing.createdAt.toISOString(),
+					updatedAt: drawing.updatedAt.toISOString()
 				})
 			} catch (error) {
 				console.error(error)

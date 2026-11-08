@@ -2,6 +2,7 @@ import { ResolverContext } from "./types.js"
 import { cachingResolver } from "./services/cachingService.js"
 import * as toyResolvers from "./resolvers/toy.js"
 import * as checkoutSessionResolvers from "./resolvers/checkoutSession.js"
+import * as drawingResolvers from "./resolvers/drawing.js"
 import * as profileResolvers from "./resolvers/profile.js"
 import { calculateAge } from "./services/ageService.js"
 
@@ -69,6 +70,19 @@ export const resolvers = {
 				info,
 				toyResolvers.listMyPurchases
 			),
+		listMyDrawings: (
+			parent: any,
+			args: any,
+			context: ResolverContext,
+			info: any
+		) =>
+			cachingResolver(
+				parent,
+				args,
+				context,
+				info,
+				drawingResolvers.listMyDrawings
+			),
 		retrieveMyProfile: (
 			parent: any,
 			args: any,
@@ -85,6 +99,13 @@ export const resolvers = {
 	},
 	ToyPhoto: {
 		url: (photo: { fileName: string }) => `/photos/${photo.fileName}`
+	},
+	Drawing: {
+		url: (drawing: { fileName: string }) => `/photos/${drawing.fileName}`,
+		createdAt: (drawing: { createdAt: Date }) =>
+			drawing.createdAt.toISOString(),
+		updatedAt: (drawing: { updatedAt: Date }) =>
+			drawing.updatedAt.toISOString()
 	},
 	Profile: {
 		age: (profile: { birthDate?: Date | null }) =>

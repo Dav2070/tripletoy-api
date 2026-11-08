@@ -184,6 +184,12 @@ curl -X POST http://localhost:3005/toys/<uuid>/photos \
 
 Ein Foto entfernst du mit `DELETE /toys/<uuid>/photos/<foto-uuid>` (ebenfalls mit `Authorization`-Header). Die Antwort des Uploads enthält `uuid` und `url` (z.B. `/photos/<datei>.jpg`). Über GraphQL sind die Fotos als `photos { uuid url }` am `Toy` abrufbar.
 
+## Zeichnungen
+
+Angemeldete Nutzer können Kinderzeichnungen hochladen, aus denen ein echtes Spielzeug entsteht (max. 20 Stück, je max. 10 MB, JPEG/PNG/WebP). Der Upload funktioniert wie bei den Fotos, nur an `POST /drawings` (mit `Authorization`-Header und dem rohen Bild als Body). Die Antwort enthält `uuid`, `url`, `status`, `createdAt` und `updatedAt`.
+
+`listMyDrawings(limit, offset)` (mit Login) liefert die eigenen Zeichnungen, die neuesten zuerst, mit dem Status `RECEIVED`, `IN_PROGRESS`, `COMPLETED` oder `REJECTED`. Neue Zeichnungen haben `RECEIVED`. Den Status ändert vorerst nur ein Admin direkt in der Datenbank (Tabelle `Drawing`).
+
 ## Spielzeug kaufen
 
 Bezahlt wird mit dem dav-Checkout (Stripe), wie in PocketLib. Voraussetzungen in `.env`:

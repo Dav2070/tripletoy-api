@@ -27,7 +27,8 @@
 		"express": "^5.2.1",
 		"graphql": "^16.14.2",
 		"nodemon": "^3.1.14",
-		"redis": "^6.2.1"
+		"redis": "^6.2.1",
+		"resend": "^6.37.0"
 	},
 	"devDependencies": {
 		"@types/cors": "^2.8.19",

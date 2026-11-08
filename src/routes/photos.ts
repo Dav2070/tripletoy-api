@@ -16,6 +16,7 @@ import {
 } from "../constants.js"
 import type { ApiError } from "../types.js"
 import type { AppDependencies } from "../appDependencies.js"
+import { sendDrawingUploadedEmail } from "../services/emailService.js"
 
 const photoContentTypes = ["image/jpeg", "image/png", "image/webp"]
 
@@ -221,6 +222,11 @@ export function createPhotosRouter(dependencies: AppDependencies) {
 				}
 
 				await invalidateCache(dependencies.redis)
+				await sendDrawingUploadedEmail({
+					drawingUuid: drawing.uuid,
+					userId,
+					attachment: { filename: fileName, content: data }
+				})
 				res.status(201).json({
 					uuid: drawing.uuid,
 					url: `/photos/${fileName}`,

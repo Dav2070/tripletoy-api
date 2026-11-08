@@ -218,3 +218,7 @@ mutation {
 Ablauf: Die Mutation liefert die Stripe-URL, auf die der Käufer weitergeleitet wird (Lieferadresse wird im Checkout abgefragt). Nach der Zahlung ruft dav `POST /davWebhook` mit `order.completed` auf. Das Backend lädt die Bestellung bei dav, speichert sie mit der Lieferadresse als `ToyOrder` und markiert das Spielzeug als verkauft (`sold`). Der Verkäufer sieht die Bestellung über `Toy.order`. Die Auszahlung an den Verkäufer erfolgt nicht über die App.
 
 Bezahlen zwei Käufer gleichzeitig dasselbe Spielzeug, gewinnt die zuerst gemeldete Bestellung. Für die zweite steht ein Hinweis im Log, sie muss manuell erstattet werden.
+
+## E-Mail-Benachrichtigungen
+
+Bei jeder bezahlten Bestellung (Spielzeug oder Zeichnung, `davWebhook`) und bei jeder hochgeladenen Zeichnung (mit dem Bild im Anhang) geht eine E-Mail über [Resend](https://resend.com) an `ADMIN_EMAIL`. Dafür müssen `RESEND_API_KEY` und `ADMIN_EMAIL` in `.env` gesetzt sein, optional `EMAIL_FROM`. Fehler beim Versand werden nur geloggt und lassen Upload bzw. Webhook nicht fehlschlagen.

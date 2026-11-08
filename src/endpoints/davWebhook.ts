@@ -4,6 +4,10 @@ import { Auth, OrdersController, OrderResource } from "dav-js"
 import type { Drawing } from "../generated/prisma/client.js"
 import { invalidateCache } from "../services/cachingService.js"
 import type { AppDependencies } from "../appDependencies.js"
+import {
+	sendDrawingOrderEmail,
+	sendToyOrderEmail
+} from "../services/emailService.js"
 
 function isAuthorized(header: string | undefined): boolean {
 	const key = process.env.DAV_WEBHOOK_KEY
@@ -62,6 +66,13 @@ async function completeDrawingOrder(
 	])
 
 	await invalidateCache(redis)
+	await sendDrawingOrderEmail({
+		orderUuid,
+		drawingUuid: drawing.uuid,
+		fileName: drawing.fileName,
+		price: order.price,
+		address
+	})
 }
 
 // dav calls this url (the webhook url of the app in the dav dashboard) when an order was paid
@@ -183,6 +194,34 @@ async function davWebhook(
 	])
 
 	await invalidateCache(redis)
+
+	const [photos, sellerProfile] = await Promise.all([
+		prisma.toyPhoto.findMany({
+			where: { toyId: toy.id },
+			orderBy: { id: "asc" }
+		}),
+		prisma.userProfile.findUnique({ where: { userId: toy.userId } })
+	])
+
+	await sendToyOrderEmail({
+		orderUuid,
+		toy,
+		price: order.price,
+		address,
+		photoFileNames: photos.map(photo => photo.fileName),
+		sellerAddress:
+			sellerProfile?.addressName && sellerProfile.addressLine1
+				? {
+						name: sellerProfile.addressName,
+						phone: sellerProfile.phone,
+						line1: sellerProfile.addressLine1,
+						line2: sellerProfile.addressLine2,
+						postalCode: sellerProfile.addressPostalCode ?? "",
+						city: sellerProfile.addressCity ?? "",
+						country: sellerProfile.addressCountry ?? ""
+					}
+				: null
+	})
 	return res.sendStatus(200)
 }
 

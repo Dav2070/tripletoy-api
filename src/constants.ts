@@ -30,6 +30,17 @@ export const fixedProductsUserId = process.env.FIXED_PRODUCTS_USER_ID
 export const jewelryUserId = process.env.JEWELRY_USER_ID
 	? BigInt(process.env.JEWELRY_USER_ID)
 	: null
+// Events
+export const eventTitleMaxLength = 100
+export const eventDescriptionMaxLength = 2000
+export const eventUrlMaxLength = 500
+// Only the events within this radius in kilometers are shown by default
+export const eventRadiusDefault = 50
+export const eventRadiusMax = 500
+// Maximum number of events in a list
+export const eventsMax = 100
+// Events without an end time are shown for this long after they started
+export const eventDefaultDurationHours = 3
 // Maximum number of drawings per user
 export const drawingMaxCount = 20
 // Price of turning a drawing into a toy in cents

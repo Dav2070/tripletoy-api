@@ -96,6 +96,31 @@ model DrawingOrder {
   createdAt  DateTime @default(now())
 }
 
+// An event in the real world for kids, managed by the admins
+model Event {
+  id          BigInt    @id @default(autoincrement())
+  uuid        String    @unique @default(uuid()) @db.VarChar
+  title       String    @db.VarChar
+  description String?   @db.VarChar
+  startsAt    DateTime
+  endsAt      DateTime?
+  // The name of the place, e.g. the name of the museum
+  venue       String?   @db.VarChar
+  line1       String    @db.VarChar
+  postalCode  String    @db.VarChar
+  city        String    @db.VarChar
+  country     String    @db.VarChar
+  // Approximate position of the address, used to show only the events nearby
+  latitude    Float
+  longitude   Float
+  // Link to more information or the tickets
+  url         String?   @db.VarChar
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @default(now()) @updatedAt
+
+  @@index([startsAt])
+}
+
 model UserProfile {
   id          BigInt   @id @default(autoincrement())
   userId      BigInt   @unique

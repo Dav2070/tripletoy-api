@@ -14,6 +14,10 @@ export const typeDefs = `#graphql
 		listFixedToys: [Toy!]!
 		"The handmade jewelry for kids, which is shown on its own page"
 		listJewelry: [Toy!]!
+		"The upcoming events within the radius in kilometers (default 50) around the position, the next ones first"
+		listEvents(latitude: Float!, longitude: Float!, radius: Float): [Event!]!
+		"All events including the past ones, only for admins"
+		listAllEvents: [Event!]! @auth(role: "ADMIN")
 		listToyLocations: [ToyLocation!]!
 		listMyToys(limit: Int, offset: Int): ToyList! @auth
 		listMyPurchases(limit: Int, offset: Int): ToyList! @auth
@@ -43,6 +47,10 @@ export const typeDefs = `#graphql
 			price: Int!
 		): Toy! @auth
 		deleteToy(uuid: String!): Boolean! @auth
+		createEvent(input: EventInput!): Event! @auth(role: "ADMIN")
+		updateEvent(uuid: String!, input: EventInput!): Event!
+			@auth(role: "ADMIN")
+		deleteEvent(uuid: String!): Boolean! @auth(role: "ADMIN")
 		createDrawingCheckoutSession(
 			uuid: String!
 			productName: String
@@ -54,6 +62,41 @@ export const typeDefs = `#graphql
 			successUrl: String!
 			cancelUrl: String!
 		): CheckoutSession! @auth
+	}
+
+	input EventInput {
+		title: String!
+		description: String
+		"Start as ISO 8601 date and time"
+		startsAt: String!
+		"End as ISO 8601 date and time"
+		endsAt: String
+		"Name of the place"
+		venue: String
+		line1: String!
+		postalCode: String!
+		city: String!
+		country: String!
+		url: String
+	}
+
+	"An event in the real world for kids"
+	type Event {
+		uuid: String!
+		title: String!
+		description: String
+		startsAt: String!
+		endsAt: String
+		venue: String
+		line1: String!
+		postalCode: String!
+		city: String!
+		country: String!
+		url: String
+		"Distance in kilometers to the position of the request, only set in listEvents"
+		distance: Float
+		createdAt: String!
+		updatedAt: String!
 	}
 
 	input AddressInput {
@@ -84,6 +127,8 @@ export const typeDefs = `#graphql
 		"The phone number of the user, only visible for the user themselves"
 		phone: String
 		description: String
+		"Whether the user is an admin and can manage the events"
+		isAdmin: Boolean!
 	}
 
 	type Toy {

@@ -73,6 +73,11 @@ export const apiErrors = {
 		message: "You have uploaded too many drawings",
 		status: 400
 	},
+	eventDoesNotExist: {
+		code: "EVENT_NOT_EXISTS",
+		message: "Event does not exist",
+		status: 404
+	},
 	tooManyPhotos: {
 		code: "TOO_MANY_PHOTOS",
 		message: "The toy has too many photos",
@@ -90,5 +95,9 @@ export const validationErrors = {
 	addressRequired: "ADDRESS_REQUIRED",
 	locationInvalid: "LOCATION_INVALID",
 	phoneInvalid: "PHONE_INVALID",
+	eventStartInvalid: "EVENT_START_INVALID",
+	eventEndInvalid: "EVENT_END_INVALID",
+	eventUrlInvalid: "EVENT_URL_INVALID",
+	eventLocationNotFound: "EVENT_LOCATION_NOT_FOUND",
 	profileDescriptionTooLong: "PROFILE_DESCRIPTION_TOO_LONG"
 }

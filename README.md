@@ -223,3 +223,11 @@ Bezahlen zwei Käufer gleichzeitig dasselbe Spielzeug, gewinnt die zuerst gemeld
 ## E-Mail-Benachrichtigungen
 
 Bei jeder bezahlten Bestellung (Spielzeug oder Zeichnung, `davWebhook`) und bei jeder hochgeladenen Zeichnung (mit dem Bild im Anhang) geht eine E-Mail über [Resend](https://resend.com) an `ADMIN_EMAIL`. Dafür müssen `RESEND_API_KEY` und `ADMIN_EMAIL` in `.env` gesetzt sein, optional `EMAIL_FROM`. Fehler beim Versand werden nur geloggt und lassen Upload bzw. Webhook nicht fehlschlagen.
+
+## Events
+
+Events sind Veranstaltungen in der realen Welt für Kinder und liegen in der Tabelle `Event` (nach dem Update `npx prisma db push` ausführen).
+
+- `listEvents(latitude, longitude, radius)` (ohne Login) liefert die kommenden Events im Umkreis (Standard 50 km, höchstens 500 km), die nächsten zuerst, mit `distance` in km. Events ohne Endzeit gelten ab dem Beginn noch 3 Stunden als bevorstehend. Das Ergebnis hängt vom Standort ab und wird nicht gecacht.
+- Admins (`admins` in `src/constants.ts`) verwalten die Events mit `listAllEvents` (auch vergangene) sowie `createEvent`, `updateEvent` und `deleteEvent`. `Profile.isAdmin` zeigt dem Frontend, ob der Nutzer Admin ist.
+- Die Position eines Events wird beim Speichern über den Geocoder aus Postleitzahl, Stadt und Land bestimmt (ungefähr, wie bei den Spielzeugen). Wird der Ort nicht gefunden, schlägt das Speichern mit `EVENT_LOCATION_NOT_FOUND` fehl.

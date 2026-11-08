@@ -21,6 +21,7 @@ import {
 	soldToyVisibleDays,
 	coinsPerPurchase,
 	coinsPerSale,
+	coinsPerDrawing,
 	toyLocationsMax,
 	fixedProductsUserId
 } from "../constants.js"
@@ -230,16 +231,20 @@ export async function retrieveMyToyStats(
 > {
 	const userId = BigInt(context.user.Id)
 
-	const [active, sold, bought, completedSales] =
+	const [active, sold, bought, completedSales, paidDrawings] =
 		await context.prisma.$transaction([
 			context.prisma.toy.count({ where: { userId, soldAt: null } }),
 			context.prisma.toy.count({ where: { userId, soldAt: { not: null } } }),
 			context.prisma.toyOrder.count({ where: { buyerId: userId } }),
-			context.prisma.toyOrder.count({ where: { toy: { userId } } })
+			context.prisma.toyOrder.count({ where: { toy: { userId } } }),
+			context.prisma.drawingOrder.count({ where: { buyerId: userId } })
 		])
 
-	// Buyers get coins for every purchase and sellers for every sale
-	const coins = bought * coinsPerPurchase + completedSales * coinsPerSale
+	// Buyers get coins for every purchase, sellers for every sale and everyone for every paid drawing
+	const coins =
+		bought * coinsPerPurchase +
+		completedSales * coinsPerSale +
+		paidDrawings * coinsPerDrawing
 
 	return { caching: false, data: { active, sold, bought, coins } }
 }

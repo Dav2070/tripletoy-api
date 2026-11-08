@@ -101,7 +101,7 @@ query {
 
 `retrieveMyToyStats` (mit Login) zählt die aktiven und verkauften Spielzeuge des Nutzers sowie seine Käufe und die gesammelten Coins.
 
-Coins gibt es für jede bezahlte Bestellung: 15 für den Käufer und 10 für den Verkäufer (`coinsPerPurchase` und `coinsPerSale` in `src/constants.ts`). Der Stand wird aus den gespeicherten Bestellungen berechnet, es gibt keine eigene Tabelle. Ändert man die Werte, ändern sich die Stände rückwirkend.
+Coins gibt es für jede bezahlte Bestellung: 15 für den Käufer, 10 für den Verkäufer und 100 für jede bezahlte Zeichnung (`coinsPerPurchase`, `coinsPerSale` und `coinsPerDrawing` in `src/constants.ts`). Der Stand wird aus den gespeicherten Bestellungen berechnet, es gibt keine eigene Tabelle. Ändert man die Werte, ändern sich die Stände rückwirkend.
 
 ```graphql
 query {

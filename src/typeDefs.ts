@@ -165,7 +165,7 @@ export const typeDefs = `#graphql
 		sold: Int!
 		"Toys the user has bought"
 		bought: Int!
-		"Collected coins: 15 for every purchase and 10 for every sale"
+		"Collected coins: 15 for every purchase, 10 for every sale and 100 for every paid drawing"
 		coins: Int!
 	}
 

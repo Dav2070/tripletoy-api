@@ -1,7 +1,6 @@
-import { readFile } from "node:fs/promises"
 import path from "node:path"
 import { Resend } from "resend"
-import { uploadsRoot } from "./photoStorage.js"
+import { readPhoto } from "./photoStorage.js"
 
 export interface EmailAttachment {
 	filename: string
@@ -79,7 +78,7 @@ export async function readAttachments(
 
 			attachments.push({
 				filename: safeName,
-				content: await readFile(path.join(uploadsRoot, safeName))
+				content: await readPhoto(safeName)
 			})
 		} catch (error) {
 			console.error(`Could not attach ${fileName}`, error)

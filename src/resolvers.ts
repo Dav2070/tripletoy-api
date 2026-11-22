@@ -7,6 +7,7 @@ import * as eventResolvers from "./resolvers/event.js"
 import * as profileResolvers from "./resolvers/profile.js"
 import { admins } from "./constants.js"
 import { calculateAge } from "./services/ageService.js"
+import { getPhotoUrl } from "./services/photoStorage.js"
 
 export const resolvers = {
 	Query: {
@@ -109,10 +110,10 @@ export const resolvers = {
 			)
 	},
 	ToyPhoto: {
-		url: (photo: { fileName: string }) => `/photos/${photo.fileName}`
+		url: (photo: { fileName: string }) => getPhotoUrl(photo.fileName)
 	},
 	Drawing: {
-		url: (drawing: { fileName: string }) => `/photos/${drawing.fileName}`,
+		url: (drawing: { fileName: string }) => getPhotoUrl(drawing.fileName),
 		createdAt: (drawing: { createdAt: Date }) =>
 			drawing.createdAt.toISOString(),
 		updatedAt: (drawing: { updatedAt: Date }) =>

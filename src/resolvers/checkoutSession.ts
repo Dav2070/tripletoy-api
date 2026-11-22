@@ -1,7 +1,8 @@
 import { CheckoutSessionsController, TableObjectPriceType } from "dav-js"
 import { throwApiError } from "../utils.js"
 import { apiErrors } from "../errors.js"
-import { drawingPrice, publicUrl } from "../constants.js"
+import { drawingPrice } from "../constants.js"
+import { getAbsolutePhotoUrl } from "../services/photoStorage.js"
 import { ResolverContext } from "../types.js"
 
 /** Creates the dav (Stripe) checkout session for buying a toy */
@@ -23,7 +24,7 @@ export async function createToyCheckoutSession(
 	// The checkout needs an image url, use the placeholder of the website if there is no photo
 	const productImage =
 		toy.photos.length > 0
-			? `${publicUrl}/photos/${toy.photos[0].fileName}`
+			? getAbsolutePhotoUrl(toy.photos[0].fileName)
 			: new URL("/assets/images/toy-placeholder.svg", args.successUrl).href
 
 	const response =
@@ -78,7 +79,7 @@ export async function createDrawingCheckoutSession(
 			price: drawingPrice,
 			currency: "EUR",
 			productName: args.productName?.trim().slice(0, 100) || "Zeichnung zu Spielzeug",
-			productImage: `${publicUrl}/photos/${drawing.fileName}`,
+			productImage: getAbsolutePhotoUrl(drawing.fileName),
 			successUrl: args.successUrl,
 			cancelUrl: args.cancelUrl
 		})

@@ -173,7 +173,7 @@ mutation {
 
 ## Fotos hochladen
 
-Fotos werden vorerst lokal im Verzeichnis `uploads/` gespeichert (`UPLOADS_DIR`, nicht im Git). Nur der Besitzer des Spielzeugs darf Fotos hinzufügen (max. 10 Stück, je max. 10 MB, JPEG/PNG/WebP). Der Body ist das rohe Bild, der `Content-Type` der Bildtyp:
+Fotos werden in DigitalOcean Spaces unter `tripletoy/photos/` gespeichert (`SPACES_ACCESS_KEY`, `SPACES_SECRET_KEY`, `SPACES_BUCKET_NAME`, optional `SPACES_REGION`, Standard `fra1`) und über das CDN ausgeliefert. Ohne diese Variablen werden sie lokal im Verzeichnis `uploads/` gespeichert (`UPLOADS_DIR`, nicht im Git) und unter `/photos/` ausgeliefert, das ist nur für die Entwicklung gedacht. Nur der Besitzer des Spielzeugs darf Fotos hinzufügen (max. 10 Stück, je max. 10 MB, JPEG/PNG/WebP). Der Body ist das rohe Bild, der `Content-Type` der Bildtyp:
 
 ```bash
 curl -X POST http://localhost:3005/toys/<uuid>/photos \

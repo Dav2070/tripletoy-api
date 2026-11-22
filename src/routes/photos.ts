@@ -1,11 +1,14 @@
 import express from "express"
 import { randomUUID } from "node:crypto"
-import { mkdir, writeFile } from "node:fs/promises"
-import path from "node:path"
 import { TableObjectsController } from "dav-js"
 import { retrieveUserByAccessToken } from "../services/userService.js"
 import { invalidateCache } from "../services/cachingService.js"
-import { deletePhotoFiles, uploadsRoot } from "../services/photoStorage.js"
+import {
+	deletePhotoFiles,
+	getPhotoUrl,
+	storePhoto,
+	uploadsRoot
+} from "../services/photoStorage.js"
 import { apiErrors } from "../errors.js"
 import {
 	drawingMaxBytes,
@@ -50,7 +53,7 @@ function sendError(res: express.Response, error: ApiError) {
 	})
 }
 
-// Serves the stored photos at /photos/<fileName> and accepts uploads at
+// Serves the locally stored photos (without DigitalOcean Spaces) at /photos/<fileName> and accepts uploads at
 // POST /toys/:uuid/photos. The body is the raw image, the Content-Type header
 // is the image type and the Authorization header the dav access token.
 export function createPhotosRouter(dependencies: AppDependencies) {
@@ -130,8 +133,7 @@ export function createPhotosRouter(dependencies: AppDependencies) {
 					return sendError(res, apiErrors.tooManyPhotos)
 
 				const fileName = `${randomUUID()}.${extension}`
-				await mkdir(root, { recursive: true })
-				await writeFile(path.join(root, fileName), data)
+				await storePhoto(fileName, data)
 
 				let photo
 				try {
@@ -146,7 +148,7 @@ export function createPhotosRouter(dependencies: AppDependencies) {
 				await invalidateCache(dependencies.redis)
 				res.status(201).json({
 					uuid: photo.uuid,
-					url: `/photos/${fileName}`
+					url: getPhotoUrl(fileName)
 				})
 			} catch (error) {
 				console.error(error)
@@ -208,8 +210,7 @@ export function createPhotosRouter(dependencies: AppDependencies) {
 				}
 
 				const fileName = `${randomUUID()}.${extension}`
-				await mkdir(root, { recursive: true })
-				await writeFile(path.join(root, fileName), data)
+				await storePhoto(fileName, data)
 
 				let drawing
 				try {
@@ -229,7 +230,7 @@ export function createPhotosRouter(dependencies: AppDependencies) {
 				})
 				res.status(201).json({
 					uuid: drawing.uuid,
-					url: `/photos/${fileName}`,
+					url: getPhotoUrl(fileName),
 					status: drawing.status,
 					createdAt: drawing.createdAt.toISOString(),
 					updatedAt: drawing.updatedAt.toISOString()

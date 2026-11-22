@@ -1,6 +1,7 @@
 import path from "node:path"
 import { Resend } from "resend"
 import { readPhoto } from "./photoStorage.js"
+import { retrieveAdminEmails } from "./userService.js"
 
 export interface EmailAttachment {
 	filename: string
@@ -89,8 +90,9 @@ export async function readAttachments(
 }
 
 /**
- * Sends an email to the admin (ADMIN_EMAIL). It never throws, because a failing email must not
- * break an upload or the dav webhook. Does nothing if RESEND_API_KEY or ADMIN_EMAIL are not set.
+ * Sends an email to all admins (ADMIN_USER_IDS), the addresses come from their dav accounts.
+ * It never throws, because a failing email must not break an upload or the dav webhook.
+ * Does nothing if RESEND_API_KEY is not set or there is no admin.
  */
 export async function sendAdminEmail(params: {
 	subject: string
@@ -98,17 +100,23 @@ export async function sendAdminEmail(params: {
 	attachments?: EmailAttachment[]
 	idempotencyKey?: string
 }) {
-	const to = process.env.ADMIN_EMAIL
 	const apiKey = process.env.RESEND_API_KEY
 
-	if (!to || !apiKey) {
-		console.warn(
-			`Email "${params.subject}" not sent, RESEND_API_KEY or ADMIN_EMAIL is not set`
-		)
+	if (!apiKey) {
+		console.warn(`Email "${params.subject}" not sent, RESEND_API_KEY is not set`)
 		return
 	}
 
 	try {
+		const to = await retrieveAdminEmails()
+
+		if (to.length == 0) {
+			console.warn(
+				`Email "${params.subject}" not sent, no email address of an admin (ADMIN_USER_IDS) found`
+			)
+			return
+		}
+
 		resend ??= new Resend(apiKey)
 
 		const response = await resend.emails.send(

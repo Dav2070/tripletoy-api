@@ -230,7 +230,7 @@ Bezahlen zwei Käufer gleichzeitig dasselbe Spielzeug, gewinnt die zuerst gemeld
 
 ## E-Mail-Benachrichtigungen
 
-Bei jeder bezahlten Bestellung (Spielzeug oder Zeichnung, `davWebhook`) und bei jeder hochgeladenen Zeichnung (mit dem Bild im Anhang) geht eine E-Mail über [Resend](https://resend.com) an `ADMIN_EMAIL`. Dafür müssen `RESEND_API_KEY` und `ADMIN_EMAIL` in `.env` gesetzt sein, optional `EMAIL_FROM`. Fehler beim Versand werden nur geloggt und lassen Upload bzw. Webhook nicht fehlschlagen.
+Bei jeder bezahlten Bestellung (Spielzeug oder Zeichnung, `davWebhook`) und bei jeder hochgeladenen Zeichnung (mit dem Bild im Anhang) geht eine E-Mail über [Resend](https://resend.com) an alle Admins (`ADMIN_USER_IDS`). Die Adressen kommen aus ihren dav-Accounts (`retrieveUserById`, eine Stunde zwischengespeichert). Dafür muss `RESEND_API_KEY` in `.env` gesetzt sein, optional `EMAIL_FROM`. Fehler beim Versand werden nur geloggt und lassen Upload bzw. Webhook nicht fehlschlagen.
 
 ## Events
 

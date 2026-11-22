@@ -19,19 +19,12 @@ export const coinsPerDrawing = 100
 export const toyLocationsMax = 500
 export const toyPhotoMaxCount = 10
 export const toyPhotoMaxBytes = 10 * 1024 * 1024
-// The id of the dav user that owns the fixed products. They are shown separately from
-// the other toys and are not part of the normal toy list.
-export const fixedProductsUserId = process.env.FIXED_PRODUCTS_USER_ID
-	? BigInt(process.env.FIXED_PRODUCTS_USER_ID)
-	: null
-// The user with FIXED_PRODUCTS_USER_ID is the admin, who manages the events
-export const admins =
-	fixedProductsUserId != null ? [Number(fixedProductsUserId)] : []
-// The id of the dav user that uploads the handmade jewelry for kids. Their toys are the
-// jewelry, which is shown on its own page and is not part of the other toy lists.
-export const jewelryUserId = process.env.JEWELRY_USER_ID
-	? BigInt(process.env.JEWELRY_USER_ID)
-	: null
+// The dav user ids of the admins as comma-separated list, e.g. "12,34". The admins manage
+// the events and decide which category a toy belongs to.
+export const admins: number[] = (process.env.ADMIN_USER_IDS ?? "")
+	.split(",")
+	.map(id => Number(id.trim()))
+	.filter(id => Number.isInteger(id) && id > 0)
 // Events
 export const eventTitleMaxLength = 100
 export const eventDescriptionMaxLength = 2000

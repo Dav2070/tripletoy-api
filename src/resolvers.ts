@@ -33,6 +33,19 @@ export const resolvers = {
 			context: ResolverContext,
 			info: any
 		) => cachingResolver(parent, args, context, info, toyResolvers.listJewelry),
+		listDrawingToys: (
+			parent: any,
+			args: any,
+			context: ResolverContext,
+			info: any
+		) =>
+			cachingResolver(
+				parent,
+				args,
+				context,
+				info,
+				toyResolvers.listDrawingToys
+			),
 		listEvents: (parent: any, args: any, context: ResolverContext, info: any) =>
 			cachingResolver(parent, args, context, info, eventResolvers.listEvents),
 		listAllEvents: eventResolvers.listAllEvents,
@@ -191,6 +204,7 @@ export const resolvers = {
 		deleteEvent: eventResolvers.deleteEvent,
 		createToy: toyResolvers.createToy,
 		updateToy: toyResolvers.updateToy,
+		updateToyCategory: toyResolvers.updateToyCategory,
 		deleteToy: toyResolvers.deleteToy,
 		createDrawingCheckoutSession:
 			checkoutSessionResolvers.createDrawingCheckoutSession,

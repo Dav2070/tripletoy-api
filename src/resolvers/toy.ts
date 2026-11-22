@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto"
 import { TableObjectsController } from "dav-js"
-import { Toy, Prisma } from "../generated/prisma/client.js"
+import { Toy, Prisma, ToyCategory } from "../generated/prisma/client.js"
 import { deletePhotoFiles } from "../services/photoStorage.js"
 import {
 	AddressInput,
@@ -23,20 +23,16 @@ import {
 	coinsPerSale,
 	coinsPerDrawing,
 	toyLocationsMax,
-	fixedProductsUserId,
-	jewelryUserId
+	admins
 } from "../constants.js"
 import { ResolverContext, QueryResult, List } from "../types.js"
 
-// Maximum number of fixed products
+// Maximum number of toys in the lists of the categories other than NORMAL
 const fixedToysMax = 50
-// Maximum number of jewelry products
 const jewelryMax = 100
+const drawingToysMax = 50
 
-// The ids of the users whose toys are not part of the normal toy lists
-const separateUserIds = [fixedProductsUserId, jewelryUserId].filter(
-	(id): id is bigint => id != null
-)
+const toyCategories = Object.values(ToyCategory) as string[]
 
 const toyInclude = { photos: { orderBy: { id: "asc" } } } as const
 
@@ -99,10 +95,8 @@ export async function listToys(
 	)
 	const where: Prisma.ToyWhereInput = {
 		OR: [{ soldAt: null }, { soldAt: { gte: soldSince } }],
-		// The fixed products and the jewelry are listed separately
-		...(separateUserIds.length > 0 && {
-			userId: { notIn: separateUserIds }
-		})
+		// The toys of the other categories are listed separately
+		category: ToyCategory.NORMAL
 	}
 
 	if (args.latitude != null || args.longitude != null) {
@@ -138,42 +132,54 @@ export async function listToys(
 	}
 }
 
-/** Lists the fixed products, which are the toys of the user with FIXED_PRODUCTS_USER_ID */
+/** Lists all toys of a category, including the sold ones */
+async function listCategory(
+	context: ResolverContext,
+	category: ToyCategory,
+	orderBy: Prisma.ToyOrderByWithRelationInput,
+	take: number
+): Promise<QueryResult<Toy[]>> {
+	return {
+		caching: true,
+		data: await context.prisma.toy.findMany({
+			where: { category },
+			orderBy,
+			include: toyInclude,
+			take
+		})
+	}
+}
+
+/** Lists the fixed products, which are the toys of the category PRODUCT */
 export async function listFixedToys(
 	parent: any,
 	args: {},
 	context: ResolverContext
 ): Promise<QueryResult<Toy[]>> {
-	if (fixedProductsUserId == null) return { caching: true, data: [] }
-
-	return {
-		caching: true,
-		data: await context.prisma.toy.findMany({
-			where: { userId: fixedProductsUserId },
-			orderBy: { id: "asc" },
-			include: toyInclude,
-			take: fixedToysMax
-		})
-	}
+	return listCategory(context, ToyCategory.PRODUCT, { id: "asc" }, fixedToysMax)
 }
 
-/** Lists the jewelry, which are the toys of the user with JEWELRY_USER_ID */
+/** Lists the jewelry, which are the toys of the category JEWELRY */
 export async function listJewelry(
 	parent: any,
 	args: {},
 	context: ResolverContext
 ): Promise<QueryResult<Toy[]>> {
-	if (jewelryUserId == null) return { caching: true, data: [] }
+	return listCategory(context, ToyCategory.JEWELRY, { id: "desc" }, jewelryMax)
+}
 
-	return {
-		caching: true,
-		data: await context.prisma.toy.findMany({
-			where: { userId: jewelryUserId },
-			orderBy: { id: "desc" },
-			include: toyInclude,
-			take: jewelryMax
-		})
-	}
+/** Lists the products made from drawings, which are the toys of the category DRAWING */
+export async function listDrawingToys(
+	parent: any,
+	args: {},
+	context: ResolverContext
+): Promise<QueryResult<Toy[]>> {
+	return listCategory(
+		context,
+		ToyCategory.DRAWING,
+		{ id: "desc" },
+		drawingToysMax
+	)
 }
 
 /**
@@ -207,8 +213,7 @@ async function findToysByDistance(
 			FROM "Toy" t
 			LEFT JOIN "UserProfile" p ON p."userId" = t."userId"
 			WHERE (t."soldAt" IS NULL OR t."soldAt" >= ${soldSince}::timestamp)
-				AND (${fixedProductsUserId}::bigint IS NULL OR t."userId" <> ${fixedProductsUserId}::bigint)
-				AND (${jewelryUserId}::bigint IS NULL OR t."userId" <> ${jewelryUserId}::bigint)
+				AND t."category" = 'NORMAL'
 			ORDER BY (t."soldAt" IS NOT NULL) ASC, "distance" ASC NULLS LAST, t."id" DESC
 			LIMIT ${take} OFFSET ${skip}
 		`
@@ -286,9 +291,7 @@ export async function listToyLocations(
 	const toys = await context.prisma.toy.findMany({
 		where: {
 			soldAt: null,
-			...(separateUserIds.length > 0 && {
-				userId: { notIn: separateUserIds }
-			})
+			category: ToyCategory.NORMAL
 		},
 		orderBy: { id: "desc" },
 		take: toyLocationsMax,
@@ -356,6 +359,21 @@ function validateToyInput(args: {
 	return { title, description, price: args.price }
 }
 
+/** Returns the category of the arguments, only admins may choose another one than NORMAL */
+function validateCategory(
+	category: string | undefined,
+	context: ResolverContext
+): ToyCategory {
+	if (category == null) return ToyCategory.NORMAL
+	if (!toyCategories.includes(category))
+		throwValidationError(validationErrors.categoryInvalid)
+
+	if (category != ToyCategory.NORMAL && !admins.includes(context.user.Id))
+		throwApiError(apiErrors.actionNotAllowed)
+
+	return category as ToyCategory
+}
+
 export async function createToy(
 	parent: any,
 	args: {
@@ -363,10 +381,12 @@ export async function createToy(
 		description?: string
 		price: number
 		address?: AddressInput
+		category?: string
 	},
 	context: ResolverContext
 ): Promise<Toy> {
 	const { title, description, price } = validateToyInput(args)
+	const category = validateCategory(args.category, context)
 	const userId = BigInt(context.user.Id)
 
 	// Toys can only be sold with a shipping address in the profile. If there is none
@@ -421,7 +441,8 @@ export async function createToy(
 			userId,
 			title,
 			description,
-			price
+			price,
+			category
 		},
 		include: toyInclude
 	})
@@ -457,6 +478,23 @@ export async function updateToy(
 
 	return await context.prisma.toy.findFirst({
 		where: { id: toy.id },
+		include: toyInclude
+	})
+}
+
+/** Changes the category of any toy, only for admins */
+export async function updateToyCategory(
+	parent: any,
+	args: { uuid: string; category: string },
+	context: ResolverContext
+): Promise<Toy> {
+	const category = validateCategory(args.category, context)
+	const toy = await context.prisma.toy.findFirst({ where: { uuid: args.uuid } })
+	if (toy == null) throwApiError(apiErrors.toyDoesNotExist)
+
+	return await context.prisma.toy.update({
+		where: { id: toy.id },
+		data: { category },
 		include: toyInclude
 	})
 }

@@ -90,6 +90,7 @@ export const validationErrors = {
 	titleTooLong: "TITLE_TOO_LONG",
 	descriptionTooLong: "DESCRIPTION_TOO_LONG",
 	priceInvalid: "PRICE_INVALID",
+	categoryInvalid: "CATEGORY_INVALID",
 	birthDateInvalid: "BIRTH_DATE_INVALID",
 	addressInvalid: "ADDRESS_INVALID",
 	addressRequired: "ADDRESS_REQUIRED",

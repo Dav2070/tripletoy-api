@@ -197,8 +197,16 @@ Eine Zeichnung kostet 49,99 € (`drawingPrice`). Sie startet mit dem Status `PE
 Bezahlt wird mit dem dav-Checkout (Stripe), wie in PocketLib. Voraussetzungen in `.env`:
 
 - `DAV_TOY_TABLE_ID`: Id der Tabelle „Toy“ der App im dav-Dashboard (muss dort angelegt werden)
-- `FIXED_PRODUCTS_USER_ID` (optional): Id des dav-Nutzers, dem die Festprodukte gehören. Seine Spielzeuge fehlen in `listToys` und stehen stattdessen in `listFixedToys` (alle, auch verkaufte)
-- `JEWELRY_USER_ID` (optional): Id des dav-Nutzers, der den handgemachten Kinderschmuck hochlädt. Er legt den Schmuck wie normale Spielzeuge an (Seite „Spielzeug verkaufen“); seine Spielzeuge fehlen in `listToys` und `listToyLocations` und stehen stattdessen in `listJewelry` (alle, auch verkaufte)
+- `ADMIN_USER_IDS` (optional): komma-separierte Ids der dav-Nutzer, die Admins sind, z. B. `12,34`. Ohne diese Variable gibt es keinen Admin.
+
+Jedes Spielzeug hat eine Kategorie (`Toy.category`), die bestimmt, wo es angezeigt wird:
+
+- `NORMAL` (Standard): normale Spielzeuge in `listToys` und `listToyLocations`
+- `PRODUCT`: unsere Produkte in `listFixedToys` (alle, auch verkaufte)
+- `JEWELRY`: handgemachter Kinderschmuck in `listJewelry` (alle, auch verkaufte)
+- `DRAWING`: Produkte aus Zeichnungen in `listDrawingToys` (alle, auch verkaufte)
+
+Nur Admins können bei `createToy` eine andere Kategorie als `NORMAL` angeben und mit `updateToyCategory(uuid, category)` die Kategorie eines beliebigen Spielzeugs ändern.
 - `DAV_WEBHOOK_KEY`: derselbe Wert wie `WEBHOOK_KEY` in dav-api
 - `PUBLIC_URL`: öffentliche URL dieser API (Produktbild im Checkout)
 
@@ -229,5 +237,5 @@ Bei jeder bezahlten Bestellung (Spielzeug oder Zeichnung, `davWebhook`) und bei 
 Events sind Veranstaltungen in der realen Welt für Kinder und liegen in der Tabelle `Event` (nach dem Update `npx prisma db push` ausführen).
 
 - `listEvents(latitude, longitude, radius)` (ohne Login) liefert die kommenden Events im Umkreis (Standard 50 km, höchstens 500 km), die nächsten zuerst, mit `distance` in km. Events ohne Endzeit gelten ab dem Beginn noch 3 Stunden als bevorstehend. Das Ergebnis hängt vom Standort ab und wird nicht gecacht.
-- Admin ist der Nutzer mit `FIXED_PRODUCTS_USER_ID` (ohne diese Variable gibt es keinen Admin). Er verwaltet die Events mit `listAllEvents` (auch vergangene) sowie `createEvent`, `updateEvent` und `deleteEvent`. `Profile.isAdmin` zeigt dem Frontend, ob der Nutzer Admin ist.
+- Admins sind die Nutzer aus `ADMIN_USER_IDS`. Sie verwalten die Events mit `listAllEvents` (auch vergangene) sowie `createEvent`, `updateEvent` und `deleteEvent`. `Profile.isAdmin` zeigt dem Frontend, ob der Nutzer Admin ist.
 - Die Position eines Events wird beim Speichern über den Geocoder aus Postleitzahl, Stadt und Land bestimmt (ungefähr, wie bei den Spielzeugen). Wird der Ort nicht gefunden, schlägt das Speichern mit `EVENT_LOCATION_NOT_FOUND` fehl.

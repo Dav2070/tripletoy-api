@@ -14,6 +14,8 @@ export const typeDefs = `#graphql
 		listFixedToys: [Toy!]!
 		"The handmade jewelry for kids, which is shown on its own page"
 		listJewelry: [Toy!]!
+		"The products made from drawings, which are shown on the drawing page"
+		listDrawingToys: [Toy!]!
 		"The upcoming events within the radius in kilometers (default 50) around the position, the next ones first"
 		listEvents(latitude: Float!, longitude: Float!, radius: Float): [Event!]!
 		"All events including the past ones, only for admins"
@@ -32,6 +34,8 @@ export const typeDefs = `#graphql
 			description: String
 			price: Int!
 			address: AddressInput
+			"Only admins can choose another category than NORMAL"
+			category: ToyCategory
 		): Toy!
 			@auth
 		updateMyProfile(
@@ -46,6 +50,9 @@ export const typeDefs = `#graphql
 			description: String
 			price: Int!
 		): Toy! @auth
+		"Changes the category of any toy, only for admins"
+		updateToyCategory(uuid: String!, category: ToyCategory!): Toy!
+			@auth(role: "ADMIN")
 		deleteToy(uuid: String!): Boolean! @auth
 		createEvent(input: EventInput!): Event! @auth(role: "ADMIN")
 		updateEvent(uuid: String!, input: EventInput!): Event!
@@ -127,8 +134,20 @@ export const typeDefs = `#graphql
 		"The phone number of the user, only visible for the user themselves"
 		phone: String
 		description: String
-		"Whether the user is an admin and can manage the events"
+		"Whether the user is an admin and can manage the events and the categories of the toys"
 		isAdmin: Boolean!
+	}
+
+	"Decides where a toy is shown"
+	enum ToyCategory {
+		"A toy of a user, shown in the normal toy lists and on the map"
+		NORMAL
+		"Our own products, shown separately above the toy lists"
+		PRODUCT
+		"Handmade jewelry for kids, shown on the jewelry page"
+		JEWELRY
+		"Products made from drawings, shown on the drawing page"
+		DRAWING
 	}
 
 	type Toy {
@@ -136,6 +155,7 @@ export const typeDefs = `#graphql
 		title: String!
 		description: String
 		price: Int!
+		category: ToyCategory!
 		photos: [ToyPhoto!]!
 		sold: Boolean!
 		"Distance in kilometers to the approximate position of the seller, only set when the list is sorted by distance"

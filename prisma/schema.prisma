@@ -8,6 +8,18 @@ datasource db {
   provider = "postgresql"
 }
 
+// The category decides where a toy is shown, only admins can choose another one than NORMAL
+enum ToyCategory {
+  // A toy of a user, shown in the normal toy lists and on the map
+  NORMAL
+  // Our own products, shown separately above the toy lists ("Unsere Produkte")
+  PRODUCT
+  // Handmade jewelry for kids, shown on the jewelry page
+  JEWELRY
+  // Products made from drawings, shown on the page "Zeichnung zu Spielzeug"
+  DRAWING
+}
+
 model Toy {
   id          BigInt   @id @default(autoincrement())
   uuid        String   @unique @default(uuid()) @db.VarChar
@@ -18,8 +30,11 @@ model Toy {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @default(now()) @updatedAt
   soldAt      DateTime?
+  category    ToyCategory @default(NORMAL)
   photos      ToyPhoto[]
   order       ToyOrder?
+
+  @@index([category])
 }
 
 // The paid dav order of a toy, including the shipping address for the seller

@@ -87,3 +87,84 @@ export async function retrieveUserByAccessToken(
 
 	return convertUserResourceToUser(userResponse)
 }
+
+/** Returns the email address and the first name of a user from the dav API, or null if it fails */
+export async function retrieveUserContact(
+	id: number
+): Promise<{ email: string; firstName: string } | null> {
+	try {
+		const response = await UsersController.retrieveUserById(
+			`
+				email
+				firstName
+			`,
+			{
+				auth: new Auth({
+					apiKey: process.env.DAV_API_KEY,
+					secretKey: process.env.DAV_SECRET_KEY,
+					uuid: process.env.DAV_UUID
+				}),
+				id
+			}
+		)
+
+		if (response == null || Array.isArray(response) || !response.email) {
+			console.error(`Could not retrieve the email of the user ${id}`, response)
+			return null
+		}
+
+		return { email: response.email, firstName: response.firstName ?? "" }
+	} catch (error) {
+		console.error(`Could not retrieve the email of the user ${id}`, error)
+		return null
+	}
+}
+
+export interface PublicUser {
+	firstName: string
+	profileImage: string | null
+}
+
+// The name and the profile image of other users, e.g. of the chat partners
+const publicUserTtl = 10 * 60 * 1000
+const publicUserCache = new Map<number, { user: PublicUser; expiresAt: number }>()
+
+/** Returns the first name and the profile image of a user from the dav API, or null if it fails */
+export async function retrievePublicUser(id: number): Promise<PublicUser | null> {
+	const cached = publicUserCache.get(id)
+	if (cached != null && cached.expiresAt > Date.now()) return cached.user
+
+	try {
+		const response = await UsersController.retrieveUserById(
+			`
+				firstName
+				profileImage {
+					url
+				}
+			`,
+			{
+				auth: new Auth({
+					apiKey: process.env.DAV_API_KEY,
+					secretKey: process.env.DAV_SECRET_KEY,
+					uuid: process.env.DAV_UUID
+				}),
+				id
+			}
+		)
+
+		if (response == null || Array.isArray(response)) {
+			console.error(`Could not retrieve the user ${id}`, response)
+			return null
+		}
+
+		const user: PublicUser = {
+			firstName: response.firstName ?? "",
+			profileImage: response.profileImage?.url || null
+		}
+		publicUserCache.set(id, { user, expiresAt: Date.now() + publicUserTtl })
+		return user
+	} catch (error) {
+		console.error(`Could not retrieve the user ${id}`, error)
+		return null
+	}
+}

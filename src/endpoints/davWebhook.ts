@@ -8,6 +8,12 @@ import {
 	sendDrawingOrderEmail,
 	sendToyOrderEmail
 } from "../services/emailService.js"
+import { sendToyHandoverEmails } from "../services/userEmailService.js"
+import {
+	findOrCreateChat,
+	isNormalUser,
+	isToyOfNormalUser
+} from "../services/chatService.js"
 
 function isAuthorized(header: string | undefined): boolean {
 	const key = process.env.DAV_WEBHOOK_KEY
@@ -133,7 +139,7 @@ async function davWebhook(
 	const order = orderResponse as OrderResource
 	const address = order.shippingAddress
 
-	if (!order.tableObject?.uuid || order.user?.id == null || !address) {
+	if (!order.tableObject?.uuid || order.user?.id == null) {
 		return res.sendStatus(502)
 	}
 
@@ -148,10 +154,20 @@ async function davWebhook(
 
 		// The table object belongs to something else than a toy or a drawing
 		if (drawing == null) return res.sendStatus(404)
+		// The drawings are always shipped
+		if (!address?.line1) return res.sendStatus(502)
 
 		await completeDrawingOrder(deps, drawing, order, address, orderUuid)
 		return res.sendStatus(200)
 	}
+
+	// The toys of normal users are handed over in person, so there is no shipping address
+	const handedOver = isToyOfNormalUser(toy)
+	if (!handedOver && !address?.line1) return res.sendStatus(502)
+
+	const buyerId = BigInt(order.user.id)
+	// The buyer and the seller arrange the handover in the chat
+	const createChat = handedOver && isNormalUser(buyerId)
 
 	// dav repeats the webhook until it gets a 200, so this must be idempotent
 	const existingOrder = await prisma.toyOrder.findFirst({
@@ -166,32 +182,39 @@ async function davWebhook(
 			)
 		}
 
+		// The chat may be missing if the webhook failed after saving the order
+		if (createChat && existingOrder.orderUuid == orderUuid) {
+			await findOrCreateChat(prisma, toy.userId, existingOrder.buyerId)
+		}
+
 		return res.sendStatus(200)
 	}
 
-	await prisma.$transaction([
-		prisma.toyOrder.create({
+	const chat = await prisma.$transaction(async tx => {
+		await tx.toyOrder.create({
 			data: {
 				orderUuid,
 				toyId: toy.id,
-				buyerId: BigInt(order.user.id),
+				buyerId,
 				price: order.price,
-				name: address.name,
-				email: address.email,
-				phone: address.phone || null,
-				line1: address.line1,
-				line2: address.line2 || null,
-				postalCode: address.postalCode,
-				city: address.city,
-				state: address.state || null,
-				country: address.country
+				name: address?.name || null,
+				email: address?.email || null,
+				phone: address?.phone || null,
+				line1: address?.line1 || null,
+				line2: address?.line2 || null,
+				postalCode: address?.postalCode || null,
+				city: address?.city || null,
+				state: address?.state || null,
+				country: address?.country || null
 			}
-		}),
-		prisma.toy.update({
+		})
+		await tx.toy.update({
 			where: { id: toy.id },
 			data: { soldAt: new Date() }
 		})
-	])
+
+		return createChat ? await findOrCreateChat(tx, toy.userId, buyerId) : null
+	})
 
 	await invalidateCache(redis)
 
@@ -207,7 +230,7 @@ async function davWebhook(
 		orderUuid,
 		toy,
 		price: order.price,
-		address,
+		address: address ?? {},
 		photoFileNames: photos.map(photo => photo.fileName),
 		sellerAddress:
 			sellerProfile?.addressName && sellerProfile.addressLine1
@@ -222,6 +245,19 @@ async function davWebhook(
 					}
 				: null
 	})
+
+	// The seller and the buyer arrange the handover in the chat
+	if (chat != null) {
+		await sendToyHandoverEmails({
+			orderUuid,
+			toy,
+			price: order.price,
+			sellerId: toy.userId,
+			buyerId,
+			chatUuid: chat.uuid
+		})
+	}
+
 	return res.sendStatus(200)
 }
 

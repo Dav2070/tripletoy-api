@@ -46,8 +46,21 @@ function renderSection(section: Section): string {
 export function renderEmail(
 	title: string,
 	intro: string,
-	sections: Section[]
+	sections: Section[],
+	options: {
+		/** A link as button below the sections */
+		button?: { text: string; url: string }
+		/** A small text at the end, e.g. why the email was sent */
+		footer?: string
+	} = {}
 ): string {
+	const button = options.button
+		? `<p style="margin:24px 0 0"><a href="${escapeHtml(options.button.url)}" style="display:inline-block;padding:12px 24px;background:${accent};color:#ffffff;font-size:15px;font-weight:600;text-decoration:none;border-radius:999px">${escapeHtml(options.button.text)}</a></p>`
+		: ""
+	const footer = options.footer
+		? `<p style="margin:24px 0 0;font-size:12px;color:#9ca3af">${escapeHtml(options.footer)}</p>`
+		: ""
+
 	return `<!doctype html>
 <html>
 <body style="margin:0;padding:24px 12px;background:#f3f4f6;font-family:Roboto,Arial,sans-serif">
@@ -60,6 +73,8 @@ export function renderEmail(
 				<h2 style="margin:0 0 4px;font-size:20px;color:#111827">${escapeHtml(title)}</h2>
 				<p style="margin:0;font-size:14px;color:#6b7280">${escapeHtml(intro)}</p>
 				${sections.map(renderSection).join("")}
+				${button}
+				${footer}
 			</td>
 		</tr>
 	</table>
@@ -89,17 +104,48 @@ export async function readAttachments(
 	return attachments
 }
 
+interface EmailParams {
+	subject: string
+	html: string
+	attachments?: EmailAttachment[]
+	idempotencyKey?: string
+}
+
 /**
  * Sends an email to all admins (ADMIN_USER_IDS), the addresses come from their dav accounts.
  * It never throws, because a failing email must not break an upload or the dav webhook.
  * Does nothing if RESEND_API_KEY is not set or there is no admin.
  */
-export async function sendAdminEmail(params: {
-	subject: string
-	html: string
-	attachments?: EmailAttachment[]
-	idempotencyKey?: string
-}) {
+export async function sendAdminEmail(params: EmailParams) {
+	if (!process.env.RESEND_API_KEY) {
+		console.warn(`Email "${params.subject}" not sent, RESEND_API_KEY is not set`)
+		return
+	}
+
+	let to: string[]
+
+	try {
+		to = await retrieveAdminEmails()
+	} catch (error) {
+		console.error(`Email "${params.subject}" failed`, error)
+		return
+	}
+
+	if (to.length == 0) {
+		console.warn(
+			`Email "${params.subject}" not sent, no email address of an admin (ADMIN_USER_IDS) found`
+		)
+		return
+	}
+
+	await sendEmail(to, params)
+}
+
+/**
+ * Sends an email with Resend. It never throws, because a failing email must not break
+ * the action that triggered it. Does nothing if RESEND_API_KEY is not set.
+ */
+export async function sendEmail(to: string[], params: EmailParams) {
 	const apiKey = process.env.RESEND_API_KEY
 
 	if (!apiKey) {
@@ -108,15 +154,6 @@ export async function sendAdminEmail(params: {
 	}
 
 	try {
-		const to = await retrieveAdminEmails()
-
-		if (to.length == 0) {
-			console.warn(
-				`Email "${params.subject}" not sent, no email address of an admin (ADMIN_USER_IDS) found`
-			)
-			return
-		}
-
 		resend ??= new Resend(apiKey)
 
 		const response = await resend.emails.send(
@@ -144,15 +181,15 @@ const formatPrice = (cents: number) =>
 	`${(cents / 100).toFixed(2)} €`.replace(".", ",")
 
 type Address = {
-	name: string
+	name?: string | null
 	email?: string | null
 	phone?: string | null
-	line1: string
+	line1?: string | null
 	line2?: string | null
-	postalCode: string
-	city: string
+	postalCode?: string | null
+	city?: string | null
 	state?: string | null
-	country: string
+	country?: string | null
 }
 
 function addressRows(address: Address): Rows {
@@ -162,7 +199,7 @@ function addressRows(address: Address): Rows {
 		["Phone", address.phone],
 		["Address", address.line1],
 		["", address.line2],
-		["City", `${address.postalCode} ${address.city}`],
+		["City", [address.postalCode, address.city].filter(Boolean).join(" ")],
 		["State", address.state],
 		["Country", address.country]
 	]
@@ -172,7 +209,7 @@ export async function sendToyOrderEmail(params: {
 	orderUuid: string
 	toy: { uuid: string; title: string }
 	price: number
-	/** The shipping address of the customer */
+	/** The shipping address of the customer, only the contact details if the toy is handed over in person */
 	address: Address
 	/** The address of the seller from their profile, if they entered one */
 	sellerAddress?: Address | null

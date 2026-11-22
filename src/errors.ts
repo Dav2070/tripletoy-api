@@ -78,6 +78,11 @@ export const apiErrors = {
 		message: "Event does not exist",
 		status: 404
 	},
+	chatDoesNotExist: {
+		code: "CHAT_NOT_EXISTS",
+		message: "Chat does not exist",
+		status: 404
+	},
 	tooManyPhotos: {
 		code: "TOO_MANY_PHOTOS",
 		message: "The toy has too many photos",
@@ -100,5 +105,7 @@ export const validationErrors = {
 	eventEndInvalid: "EVENT_END_INVALID",
 	eventUrlInvalid: "EVENT_URL_INVALID",
 	eventLocationNotFound: "EVENT_LOCATION_NOT_FOUND",
-	profileDescriptionTooLong: "PROFILE_DESCRIPTION_TOO_LONG"
+	profileDescriptionTooLong: "PROFILE_DESCRIPTION_TOO_LONG",
+	messageTextTooShort: "MESSAGE_TEXT_TOO_SHORT",
+	messageTextTooLong: "MESSAGE_TEXT_TOO_LONG"
 }

@@ -23,7 +23,7 @@
 		"@prisma/adapter-pg": "^7.10.0",
 		"@prisma/client": "^7.10.0",
 		"cors": "^2.8.6",
-		"dav-js": "github:dav-apps/dav-js#v3.2.3",
+		"dav-js": "github:dav-apps/dav-js#v3.2.4",
 		"dotenv": "^17.4.2",
 		"express": "^5.2.1",
 		"graphql": "^16.14.2",

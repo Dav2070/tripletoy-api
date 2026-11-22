@@ -51,3 +51,11 @@ export const drawingTableId = Number(process.env.DAV_DRAWING_TABLE_ID) || toyTab
 export const publicUrl = (
 	process.env.PUBLIC_URL || `http://localhost:${process.env.PORT || 4002}`
 ).replace(/\/$/, "")
+// Public url of the website, used for the links in the emails to the users
+export const websiteUrl = (
+	process.env.WEBSITE_URL || "http://localhost:3006"
+).replace(/\/$/, "")
+// Chats between normal users who bought toys from each other
+export const chatMessageMaxLength = 2000
+export const chatMessagesDefaultLimit = 50
+export const chatMessagesMaxLimit = 100

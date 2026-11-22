@@ -12,6 +12,9 @@ import { createSchema } from "./schema.js"
 import type { AppDependencies } from "./appDependencies.js"
 import type { ResolverContext } from "./types.js"
 
+// The chats are never cached, so these mutations don't need to invalidate the public cache
+const cacheNeutralMutations = new Set(["sendChatMessage", "markChatAsRead"])
+
 // Creates the application without opening connections or listening on a port.
 // The caller owns the injected clients and must close them after server.stop().
 export async function createApp(dependencies: AppDependencies) {
@@ -29,7 +32,14 @@ export async function createApp(dependencies: AppDependencies) {
 				async requestDidStart() {
 					return {
 						async willSendResponse({ operation }) {
-							if (operation?.operation === "mutation")
+							if (
+								operation?.operation === "mutation" &&
+								!operation.selectionSet.selections.every(
+									selection =>
+										selection.kind === "Field" &&
+										cacheNeutralMutations.has(selection.name.value)
+								)
+							)
 								await invalidateCache(dependencies.redis)
 						}
 					}

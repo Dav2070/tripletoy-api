@@ -26,6 +26,20 @@ export const typeDefs = `#graphql
 		listMyDrawings(limit: Int, offset: Int): DrawingList! @auth
 		retrieveMyToyStats: ToyStats! @auth
 		retrieveMyProfile: Profile! @auth
+		"The chats of the logged in user, the chat with the latest message first"
+		listMyChats: [Chat!]! @auth
+		retrieveChat(uuid: String!): Chat @auth
+		"The messages of a chat, the oldest first. With before the older messages are returned, with after the newer ones"
+		listChatMessages(
+			chatUuid: String!
+			limit: Int
+			"The uuid of a message, only the messages before it are returned"
+			before: String
+			"The uuid of a message, only the messages after it are returned"
+			after: String
+		): ChatMessageList! @auth
+		"The number of chats with messages the logged in user has not read yet"
+		retrieveMyUnreadChatsCount: Int! @auth
 	}
 
 	type Mutation {
@@ -38,6 +52,9 @@ export const typeDefs = `#graphql
 			category: ToyCategory
 		): Toy!
 			@auth
+		sendChatMessage(chatUuid: String!, text: String!): ChatMessage! @auth
+		"Saves that the logged in user has read all messages of the chat"
+		markChatAsRead(chatUuid: String!): Chat! @auth
 		updateMyProfile(
 			birthDate: String
 			description: String
@@ -166,21 +183,58 @@ export const typeDefs = `#graphql
 		bought: Boolean!
 		"The order of the toy, only visible for the seller"
 		order: ToyOrder
+		"Whether the toy is handed over in person (toys of normal users), otherwise it is shipped"
+		handover: Boolean!
+		"The uuid of the chat between the seller and the buyer, only for them and the sold toys of normal users"
+		chatUuid: String
 		createdAt: String!
 		updatedAt: String!
 	}
 
+	"The order of a toy, there is no address if the toy is handed over in person (toys of normal users)"
 	type ToyOrder {
-		name: String!
-		email: String!
+		name: String
+		email: String
 		phone: String
-		line1: String!
+		line1: String
 		line2: String
-		postalCode: String!
-		city: String!
+		postalCode: String
+		city: String
 		state: String
-		country: String!
+		country: String
 		createdAt: String!
+	}
+
+	"A chat between two users who bought toys from each other"
+	type Chat {
+		uuid: String!
+		"The other user of the chat"
+		partner: ChatPartner!
+		"The toys the users bought from each other, the latest first"
+		toys: [Toy!]!
+		lastMessage: ChatMessage
+		"The number of messages of the partner the logged in user has not read yet"
+		unreadCount: Int!
+		createdAt: String!
+	}
+
+	type ChatPartner {
+		firstName: String!
+		profileImage: String
+	}
+
+	type ChatMessage {
+		uuid: String!
+		text: String!
+		"Whether the logged in user has sent the message"
+		mine: Boolean!
+		createdAt: String!
+	}
+
+	type ChatMessageList {
+		"Whether there are older messages than the returned ones"
+		hasMore: Boolean!
+		items: [ChatMessage!]!
 	}
 
 	type CheckoutSession {

@@ -4,6 +4,7 @@ import { apiErrors } from "../errors.js"
 import { drawingPrice } from "../constants.js"
 import { getAbsolutePhotoUrl } from "../services/photoStorage.js"
 import { ResolverContext } from "../types.js"
+import { isToyOfNormalUser } from "../services/chatService.js"
 
 /** Creates the dav (Stripe) checkout session for buying a toy */
 export async function createToyCheckoutSession(
@@ -36,6 +37,8 @@ export async function createToyCheckoutSession(
 			currency: "EUR",
 			productName: toy.title,
 			productImage,
+			// The toys of normal users are handed over in person, the users arrange it in the chat
+			collectShippingAddress: !isToyOfNormalUser(toy),
 			successUrl: args.successUrl,
 			cancelUrl: args.cancelUrl
 		})
